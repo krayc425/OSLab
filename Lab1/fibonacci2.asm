@@ -1,5 +1,5 @@
 SECTION .data
-	msg: db "Enter a number:", 0Ah;The message we're going to repeat
+	msg: db "Enter a number:", 0Ah
 	.len: equ $-msg	;The length of the message
 	lb: db 0Ah
 	.len: equ $-lb

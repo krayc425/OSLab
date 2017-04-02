@@ -1,6 +1,6 @@
 SECTION .data
-	msg: db "Enter a number:", 0Ah;The message we're going to repeat
-	.len: equ $-msg	;The length of the message
+	msg: db "Enter a number:", 0Ah
+	.len: equ $-msg
 	lb: db 0Ah
 	.len: equ $-lb
 	;color
