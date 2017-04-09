@@ -1,5 +1,5 @@
 SECTION .data
-	msg: db "Enter a number:", 0Ah
+	msg: db "Enter several numbers:", 0Ah
 	.len: equ $-msg
 	lb: db 0Ah
 	.len: equ $-lb
