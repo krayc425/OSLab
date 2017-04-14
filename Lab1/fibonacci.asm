@@ -13,7 +13,6 @@ SECTION .bss
 	number1 resd 1
 	number2 resd 1
 	total resw 1
-	numCount resd 1
 
 	;for printing number
 	temp resd 1
@@ -50,8 +49,8 @@ calFibonacci:
 	pusha
 
 	;init f(-1) and f(0)
-	mov dword[number1], '0'
-	mov dword[number2], '1'
+	mov dword[number1], 0
+	mov dword[number2], 1
 
 	;reset eax as a counter
 	mov eax, 0
@@ -73,22 +72,15 @@ cont:
 	mov edx, dword[number2]
 
 	;calculate f(n)
-	sub ecx, 48
-	sub edx, 48
 	add ecx, edx
-	add ecx, 48
-	add edx, 48
 
 	;save f(n-1) and f(n)
 	mov dword[number2], ecx
 	mov dword[number1], edx
 	
-	;save counter
-	;print f(n)
-	sub ecx, 48
+	;sub ecx, 48
 	mov dword[temp], ecx
 
-	;recover counter
 	;add counter
 	add eax, 1
 	
@@ -143,7 +135,6 @@ printLoop:
 
 readNum:
   	pusha
-  	mov dword[numCount], 0
   	mov word[total], 0
 loopReadNum:
     mov eax, 3
@@ -159,6 +150,7 @@ loopReadNum:
     ;space:  print a number
     cmp byte[tempNum], 32
     jne contLRN
+
     mov ax, word[total]
     mov word[temp], ax
     
@@ -183,6 +175,8 @@ contLRN:
     jne contLRN
     mov ax, word[total]
     mov word[temp], ax
+
+    ;cal fibonacci
     call calFibonacci
 
  	popa

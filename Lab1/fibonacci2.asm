@@ -42,8 +42,8 @@ _start:
 	call readNum
 
 	;init f(-1) and f(0)
-	mov dword[number1], '0'
-	mov dword[number2], '1'
+	mov dword[number1], 0
+	mov dword[number2], 1
 	;print f(0)
 	mov dword[temp], 1
 	call printNum
@@ -69,19 +69,13 @@ cont:
 	mov edx, dword[number2]
 
 	;calculate f(n)
-	sub ecx, 48
-	sub edx, 48
 	add ecx, edx
-	add ecx, 48
-	add edx, 48
 
 	;save f(n-1) and f(n)
 	mov dword[number2], ecx
 	mov dword[number1], edx
 	
-	;save counter
 	;print f(n)
-	sub ecx, 48
 	mov dword[temp], ecx
 
 	;recover counter
