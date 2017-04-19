@@ -20,15 +20,15 @@ struct BPB {
     u16  BPB_BytsPerSec;    //每扇区字节数
     u8   BPB_SecPerClus;    //每簇扇区数
     u16  BPB_RsvdSecCnt;    //Boot记录占用的扇区数
-    u8   BPB_NumFATs;   //FAT表个数
+    u8   BPB_NumFATs;       //FAT表个数
     u16  BPB_RootEntCnt;    //根目录最大文件数
     u16  BPB_TotSec16;
     u8   BPB_Media;
-    u16  BPB_FATSz16;   //FAT扇区数
+    u16  BPB_FATSz16;       //FAT扇区数
     u16  BPB_SecPerTrk;
     u16  BPB_NumHeads;
     u32  BPB_HiddSec;
-    u32  BPB_TotSec32;  //如果BPB_FATSz16为0，该值为FAT扇区数
+    u32  BPB_TotSec32;      //如果BPB_FATSz16为0，该值为FAT扇区数
 };
 //BPB至此结束，长度25字节
 
@@ -48,10 +48,12 @@ struct RootEntry {
 
 //Nasm 中的打印函数
 void my_print(char c);
-
 //打印根目录
 void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr);
-
+//打印一般目录
+void printFile(FILE *file, int clus, char *directory);
+//得到 FAT
+int getFATValue(FILE *fat12 , int num);
 //判断是否为非有效的字符（非数字，字母，空格）
 int isInValidChar(char c);
 
@@ -71,24 +73,6 @@ int main(){
     struct BPB *bpb_ptr = &bpb;
     fseek(fd, 11, SEEK_SET); //SEEK_SET表示文件头
     fread(bpb_ptr, 1, 25, fd);  //读取512个字节
-    //暂时调用 c 的格式化输出
-//    for (int i = 1; i <= 25; i++) {
-//         print(bpb_ptr[i - 1]);   //调用函数格式化输出
-//        my_print(buffer[i - 1]);
-        //增加间距提高可读性
-//        if (i % 16 == 0) {
-//            printf("\n");
-//        }
-//        else if (i % 8 == 0) {
-//            printf("    ");
-//        }
-//        else if (i % 4 == 0) {
-//            printf("  ");
-//        }
-//        else if (i % 2 == 0) {
-//            printf(" ");
-//        }
-//    }
     
     BytsPerSec = bpb_ptr->BPB_BytsPerSec;
     SecPerClus = bpb_ptr->BPB_SecPerClus;
@@ -104,9 +88,9 @@ int main(){
     printf("BytsPerSec\t%d\n", BytsPerSec);
     printf("SecPerClus\t%d\n", SecPerClus);
     printf("RsvdSecCnt\t%d\n", RsvdSecCnt);
-    printf("NumFATs\t\t%d\n", NumFATs);
+    printf("NumFATs\t\t%d\n",  NumFATs);
     printf("RootEntCnt\t%d\n", RootEntCnt);
-    printf("FATSz\t\t%d\n", FATSz);
+    printf("FATSz\t\t%d\n",    FATSz);
     
     printf("----------Start to find files----------\n");
     
@@ -139,18 +123,7 @@ void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
                 }
             }
             if(flag == 0){
-                printf("succeeds ");
-                switch (rootEntry_ptr->DIR_Attr) {
-                    case 0x10:
-                        printf("subdirectory \n");
-                        break;
-                    case 0x20:
-                        printf("archive \n");
-                        break;
-                    default:
-                        printf("other type \n");
-                        break;
-                }
+//                printf("-----succeeds-----\n");
                 //提取文件名
                 char filename[12];
                 int realLength = 0;
@@ -168,8 +141,20 @@ void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
                 }
                 filename[realLength] = '\0';
                 
-                printf("DIR_Name\t%s\n", filename);
-                printf("DIR_FstClus\t%d\n", rootEntry_ptr->DIR_FstClus);
+//                printf("DIR_Name\t%s\n", filename);
+//                printf("DIR_FstClus\t%d\n", rootEntry_ptr->DIR_FstClus);
+                
+                switch (rootEntry_ptr->DIR_Attr) {
+                    case 0x10:
+                        filename[realLength - 1] = '\0';
+                        printFile(file, rootEntry_ptr->DIR_FstClus, filename);
+                        break;
+                    case 0x20:
+                        printf("%s\n", filename);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
         //一个根目录项是32位（一个字）
@@ -177,6 +162,136 @@ void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
     }
 }
 
+/**
+ 递归打印目录及文件
+ */
+void printFile(FILE *file, int clus, char *directory){
+    char dir[100];
+    strcpy(dir, directory);
+    dir[strlen(directory)] = '/';
+    dir[strlen(directory)+1] = '\0';
+    char *filename = &dir[strlen(directory) + 1];
+    
+    //？？？
+    int dataBase = BytsPerSec * (RsvdSecCnt + FATSz * NumFATs + (RootEntCnt * 32 + BytsPerSec - 1) / BytsPerSec);
+//    printf("database : %d\n", dataBase);
+    
+    int currentClus = clus;
+    int clusNum = 0x000;  //簇号
+    
+    while (clusNum < 0xFF8) {
+        //？？？
+        clusNum = getFATValue(file, currentClus);
+        if (clusNum == 0xFF7) {
+            printf("坏簇，读取失败!\n");
+            break;
+        }
+        
+        char str[512];  //暂存从簇中读出的数据
+        char *content = str;
+        
+        int startByte = dataBase + (currentClus - 2) * 512;
+        fseek(file, startByte, SEEK_SET);
+        fread(content, 1, 512, file);
+        
+        //解析content中的数据,依次处理各个条目,目录下每个条目结构与根目录下的目录结构相同
+        int count = 512;  //每簇的字节数
+        int loop = 0;
+        while (loop < count) {
+            
+            if (content[loop] == '\0') {
+                loop += 32;
+                continue;
+            }   //空条目不输出
+            
+            //过滤非目标文件
+            int flag = 0;
+            for (int j = loop; j < loop + 11; j++) {
+                if(isInValidChar(content[j])){
+                    flag = 1;
+                    break;
+                }
+            }
+            
+            if(flag == 0){
+                //提取文件名
+                char tempFileName[12];
+                int tempRealLength = 0;
+                for (int k = 0; k < 11; k++) {
+                    if(content[loop + k] == ' '){
+                        tempFileName[tempRealLength] = '.';
+                        while (content[loop + k] == ' ') {
+                            k++;
+                        }
+                        k--;
+                    }else{
+                        tempFileName[tempRealLength] = content[loop + k];
+                    }
+                    tempRealLength++;
+                }
+                tempFileName[tempRealLength] = '\0';
+                       
+                strcpy(filename, tempFileName);
+                
+                switch (content[loop + 11]) {
+                    case 0x10:
+                        dir[strlen(directory) + tempRealLength] = '\0';
+                        printf("%s\n", dir);
+                        printFile(file, content[loop + 26], dir);
+                        break;
+                    case 0x20:
+                        printf("%s\n", dir);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            loop += 32;
+        }
+        
+        currentClus = clusNum;
+    }
+}
+
+/**
+ 判断是否为数字、字母、空格
+ */
 int isInValidChar(char c){
     return !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ');
 }
+
+//？？
+int getFATValue(FILE *fat12 , int num) {
+    //FAT1的偏移字节
+    int fatBase = RsvdSecCnt * BytsPerSec;
+    //FAT项的偏移字节
+    int fatPos = fatBase + num * 3 / 2;
+    //奇偶FAT项处理方式不同，分类进行处理，从0号FAT项开始
+    int type = 0;
+    if (num % 2 == 0) {
+        type = 0;
+    } else {
+        type = 1;
+    }
+    
+    //先读出FAT项所在的两个字节
+    u16 bytes;
+    u16* bytes_ptr = &bytes;
+    int check;
+    check = fseek(fat12,fatPos,SEEK_SET);
+    if (check == -1)
+        printf("fseek in getFATValue failed!");
+    
+    check = fread(bytes_ptr,1,2,fat12);
+    if (check != 2)
+        printf("fread in getFATValue failed!");
+    
+    //u16为short，结合存储的小尾顺序和FAT项结构可以得到
+    //type为0的话，取byte2的低4位和byte1构成的值，type为1的话，取byte2和byte1的高4位构成的值
+    if (type == 0) {
+        return bytes<<4;
+    } else {
+        return bytes>>4;
+    }
+}
+
