@@ -1,35 +1,31 @@
-    org 07c00h
+global add
 
-    ; Load stage 2 to memory.
-    mov ah, 0x02
-    mov al, 1
-    mov dl, 0x80
-    mov ch, 0
-    mov dh, 0
-    mov cl, 2
-    mov bx, stage2
-    int 0x13
+global my_print
 
-    jmp stage2
+SECTION .bss
+	char resb 1
 
-    times ((0x200 - 2) - ($ - $$)) db 0x00
-    dw 0xAA55
+SECTION .text
 
-stage2:
+add:
+    mov eax, [esp + 4]
+    add eax, [esp + 8]
+    ret
 
-    mov si, msg
-    mov ah, 0x0E
-for_each_char:
-    lodsb
-    cmp al, 0x00
-    je end_for_each_char
-    int 0x10
-    jmp for_each_char
-end_for_each_char:
-
-    cli
-    hlt
-
-    msg: db 'second stage', 0
-
-    times ((0x400) - ($ - $$)) db 0x00
+my_print:
+	;create stack frame
+	push ebp
+    mov ebp, esp
+    ;get the argument
+    mov ecx, [ebp + 8]
+    ;move to 'char' in memory
+    mov dword[char], ecx
+    ;print 'char'
+	mov eax, 4
+	mov ebx, 1
+	mov ecx, char
+	mov edx, 4
+	int 0x80
+	; restore the base pointer
+    pop ebp
+	ret
