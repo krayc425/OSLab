@@ -16,7 +16,7 @@ int  FATSz;         //FAT扇区数
 #pragma pack (1) /*指定按1字节对齐*/
 
 //偏移11个字节   Volume Boot Record  长度25字节
-struct BPB {
+struct BPB{
     u16  BPB_BytsPerSec;    //每扇区字节数
     u8   BPB_SecPerClus;    //每簇扇区数
     u16  BPB_RsvdSecCnt;    //Boot记录占用的扇区数
@@ -32,7 +32,7 @@ struct BPB {
 };
 
 //根目录条目 长度32字节
-struct RootEntry {
+struct RootEntry{
     char DIR_Name[11];
     u8   DIR_Attr;      //文件属性
     char reserved[10];
@@ -42,16 +42,28 @@ struct RootEntry {
     u32  DIR_FileSize;
 };
 
+//树的节点 type = 0: 目录，1: 文件
+struct TreeNode{
+    int type;
+    char name[100];
+    int dir_count;
+    int file_count;
+    struct TreeNode *fatherNode;
+    struct TreeNode *sonNode;       //子目录/文件
+    struct TreeNode *siblingNode;   //若有>1的子目录/文件，存在这里
+};
+typedef struct TreeNode Node;
+
 #pragma pack () /*取消指定对齐，恢复缺省对齐*/
 
 //Nasm 中的打印函数
 void my_print(char c);
 //打印根目录
-void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr);
+void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr, struct TreeNode *rootNode_ptr);
 //打印一般目录
-void printFile(FILE *file, int clus, char *directory);
+void printFile(FILE *file, int clus, char *directory, Node *rootNode);
 //得到 FAT
-int getFATValue(FILE *fat12 , int num);
+int getFATValue(FILE *file, int num);
 //打印文件内容
 void printFileData(FILE *file, int clus, int size);
 //判断是否为非有效的字符（非数字，字母，空格）（用于文件名）
@@ -60,6 +72,8 @@ int isInValidChar(char c);
 void printName(char *str, int type);
 //判断是否为可以打印的字符
 int isPrintableChar(char c);
+//递归打印目录
+void printRecursively(Node *rootNode_ptr);
 
 int main(){
     printf("----------Start to load image----------\n");
@@ -84,9 +98,9 @@ int main(){
     RsvdSecCnt = bpb_ptr->BPB_RsvdSecCnt;
     NumFATs = bpb_ptr->BPB_NumFATs;
     RootEntCnt = bpb_ptr->BPB_RootEntCnt;
-    if (bpb_ptr->BPB_FATSz16 != 0) {
+    if (bpb_ptr->BPB_FATSz16 != 0){
         FATSz = bpb_ptr->BPB_FATSz16;
-    } else {
+    }else{
         FATSz = bpb_ptr->BPB_TotSec32;
     }
     
@@ -102,17 +116,55 @@ int main(){
     struct RootEntry rootEntry;
     struct RootEntry *rootEntry_ptr = &rootEntry;
     
-    printRoot(fd, 19 * 512, rootEntry_ptr);
+    Node rootNode;
+    Node *rootNode_ptr = &rootNode;
+    rootNode_ptr->type = 0;
+    rootNode_ptr->dir_count = 0;
+    rootNode_ptr->file_count = 0;
+    rootNode_ptr->sonNode = NULL;
+    rootNode_ptr->siblingNode = NULL;
+    strcpy(rootNode_ptr->name, "/");
+    printRoot(fd, 19 * 512, rootEntry_ptr, rootNode_ptr);
+    
+    printf("----------Start to print files----------\n");
+    
+    printRecursively(rootNode_ptr);
     
     fclose(fd);
 
     return 0;
 }
 
+void printRecursively(Node *rootNode_ptr){
+    printf("%d directories, %d files, %s \n", rootNode_ptr->dir_count, rootNode_ptr->file_count, rootNode_ptr->name);
+    if(rootNode_ptr->sonNode != NULL){
+        printf("root %s son %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->name);
+        
+        printRecursively(rootNode_ptr->sonNode);
+    }else{
+        return; //没孩子肯定没邻居
+    }
+    Node *indexNode = rootNode_ptr->sonNode->siblingNode;
+    while (1) {
+        if(indexNode == NULL){
+            break;
+        }
+        printf("root %s sib %s\n", rootNode_ptr->name, indexNode->name);
+        
+        printRecursively(indexNode);
+        
+//        if(indexNode->siblingNode != NULL){
+            indexNode = indexNode->siblingNode;
+//        }else{
+//            break;
+//        }
+    }
+}
+
 /**
  从 Root 的 base 处开始一个个读取 RootEntry
  */
-void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
+void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
     for(int i = 0; i < RootEntCnt; i++){
 
         fseek(file, base, SEEK_SET);
@@ -122,7 +174,7 @@ void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
             continue;
         }else{
             int flag = 0;
-            for (int j = 0; j < 11; j++) {
+            for (int j = 0; j < 11; j++){
                 if(isInValidChar(rootEntry_ptr->DIR_Name[j])){
                     flag = 1;
                     break;
@@ -137,7 +189,7 @@ void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
                     if(rootEntry_ptr->DIR_Name[k] == ' '){
                         //将第一个空格替换为.
                         filename[realLength] = '.';
-                        while (rootEntry_ptr->DIR_Name[k] == ' ') {
+                        while (rootEntry_ptr->DIR_Name[k] == ' '){
                             k++;
                         }
                         k--;
@@ -148,16 +200,82 @@ void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
                 }
                 filename[realLength] = '\0';
                 
-                switch (rootEntry_ptr->DIR_Attr) {
+                switch (rootEntry_ptr->DIR_Attr){
                     case 0x10:
+                    {
                         //目录，最后一个.改成\0
                         filename[realLength - 1] = '\0';
+                        
+                        Node *node_ptr = (Node *)malloc(sizeof(Node));
+                        node_ptr->type = 0;
+                        strcpy(node_ptr->name, rootNode_ptr->name);
+                        strcpy(node_ptr->name+strlen(rootNode_ptr->name), filename);
+                        rootNode_ptr->dir_count++;
+                        node_ptr->dir_count = 0;
+                        node_ptr->file_count = 0;
+                        node_ptr->fatherNode = rootNode_ptr;
+                        node_ptr->sonNode = NULL;
+                        node_ptr->siblingNode = NULL;
+                        if(rootNode_ptr->sonNode == NULL){
+                            rootNode_ptr->sonNode = node_ptr;
+//                            printf("d son %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->name);
+                        }else{
+                            if(rootNode_ptr->sonNode->siblingNode == NULL){
+                                rootNode_ptr->sonNode->siblingNode = node_ptr;
+//                                printf("d sib %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->siblingNode->name);
+                            }else{
+                                Node *indexNode = rootNode_ptr->sonNode->siblingNode;
+                                while (1) {
+                                    if(indexNode->siblingNode == NULL){
+                                        indexNode->siblingNode = node_ptr;
+                                        break;
+                                    }
+                                    indexNode = indexNode->siblingNode;
+                                }
+//                                printf("d sib %s\t %s\n", rootNode_ptr->name, indexNode->siblingNode->name);
+                            }
+                        }
+                        
                         printName(filename, 0);
-                        printFile(file, rootEntry_ptr->DIR_FstClus, filename);
+                        printFile(file, rootEntry_ptr->DIR_FstClus, filename, node_ptr);
+                    }
                         break;
                     case 0x20:
+                    {
+                        Node *node_ptr = (Node *)malloc(sizeof(Node));
+                        node_ptr->type = 1;
+                        strcpy(node_ptr->name, rootNode_ptr->name);
+                        strcpy(node_ptr->name+strlen(rootNode_ptr->name), filename);
+                        rootNode_ptr->file_count++;
+                        node_ptr->dir_count = 0;
+                        node_ptr->file_count = 0;
+                        node_ptr->fatherNode = rootNode_ptr;
+                        node_ptr->sonNode = NULL;
+                        node_ptr->siblingNode = NULL;
+                        if(rootNode_ptr->sonNode == NULL){
+                            rootNode_ptr->sonNode = node_ptr;
+//                            printf("f son %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->name);
+                        }else{
+                            if(rootNode_ptr->sonNode->siblingNode == NULL){
+                                rootNode_ptr->sonNode->siblingNode = node_ptr;
+//                                printf("f sib %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->siblingNode->name);
+                            }else{
+                                Node *indexNode = rootNode_ptr->sonNode->siblingNode;
+                                while (1) {
+                                    if(indexNode->siblingNode == NULL){
+                                        indexNode->siblingNode = node_ptr;
+                                        break;
+                                    }
+                                    indexNode = indexNode->siblingNode;
+                                }
+//                                printf("f sib %s\t %s\n", rootNode_ptr->name, indexNode->siblingNode->name);
+                            }
+                        }
+                        
                         printName(filename, 1);
-                        printFileData(file, rootEntry_ptr->DIR_FstClus, rootEntry_ptr->DIR_FileSize);
+                        printFile(file, rootEntry_ptr->DIR_FstClus, filename, node_ptr);
+
+                    }
                         break;
                     default:
                         break;
@@ -172,19 +290,17 @@ void printRoot(FILE *file, int base, struct RootEntry *rootEntry_ptr){
 /**
  递归打印目录及文件
  */
-void printFile(FILE *file, int clus, char *directory){
+void printFile(FILE *file, int clus, char *directory, Node *rootNode_ptr){
     char dir[100];
-    strcpy(dir, directory);
-    dir[strlen(directory)] = '/';
-    dir[strlen(directory)+1] = '\0';
-    char *filename = &dir[strlen(directory) + 1];
+    dir[0] = '/';
+    char *filename = dir + 1;
     
     int dataBase = 512 * 33;
     
     int currentClus = clus;
     int clusNum = 0x000;  //簇号
     
-    while (clusNum < 0xFF8) {
+    while (clusNum < 0xFF8){
         //找到下一个簇号
         clusNum = getFATValue(file, currentClus);
         if (clusNum == 0xFF7) { //坏簇
@@ -207,7 +323,7 @@ void printFile(FILE *file, int clus, char *directory){
                 continue;
             }
             int flag = 0;
-            for (int j = i; j < i + 11; j++) {
+            for (int j = i; j < i + 11; j++){
                 if(isInValidChar(content[j])){
                     flag = 1;
                     break;
@@ -218,10 +334,10 @@ void printFile(FILE *file, int clus, char *directory){
                 //提取文件名
                 char tempFileName[12];
                 int tempRealLength = 0;
-                for (int k = 0; k < 11; k++) {
+                for (int k = 0; k < 11; k++){
                     if(content[i + k] == ' '){
                         tempFileName[tempRealLength] = '.';
-                        while (content[i + k] == ' ') {
+                        while (content[i + k] == ' '){
                             k++;
                         }
                         k--;
@@ -234,15 +350,88 @@ void printFile(FILE *file, int clus, char *directory){
                        
                 strcpy(filename, tempFileName);
                 
-                switch (content[i + 11]) {
+                switch (content[i + 11]){
                     case 0x10:
-                        dir[strlen(directory) + tempRealLength] = '\0';
-                        printName(dir, 0);
-                        printFile(file, content[i + 26], dir);
+                    {
+                        dir[tempRealLength] = '\0';
+                        
+                        Node *node_ptr = (Node *)malloc(sizeof(Node));
+                        node_ptr->type = 0;
+                        strcpy(node_ptr->name, rootNode_ptr->name);
+                        strcpy(node_ptr->name+strlen(rootNode_ptr->name), dir);
+                        rootNode_ptr->dir_count++;
+                        node_ptr->dir_count = 0;
+                        node_ptr->file_count = 0;
+                        node_ptr->fatherNode = rootNode_ptr;
+                        node_ptr->sonNode = NULL;
+                        node_ptr->siblingNode = NULL;
+                        if(rootNode_ptr->sonNode == NULL){
+                            rootNode_ptr->sonNode = node_ptr;
+//                            printf("d son %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->name);
+                        }else{
+                            if(rootNode_ptr->sonNode->siblingNode == NULL){
+                                rootNode_ptr->sonNode->siblingNode = node_ptr;
+//                                printf("d sib %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->siblingNode->name);
+                            }else{
+                                Node *indexNode = rootNode_ptr->sonNode->siblingNode;
+                                while (1) {
+                                    if(indexNode->siblingNode == NULL){
+                                        indexNode->siblingNode = node_ptr;
+                                        break;
+                                    }
+                                    indexNode = indexNode->siblingNode;
+                                }
+//                                printf("d sib %s\t %s\n", rootNode_ptr->name, indexNode->siblingNode->name);
+                            }
+                        }
+                        
+                        char temp[100];
+                        char *printDir = temp;
+                        strcpy(printDir, directory);
+                        strcpy(printDir+strlen(directory), dir);
+                        printName(printDir, 0);
+                        printFile(file, content[i + 26], dir, node_ptr);
+                    }
                         break;
                     case 0x20:
-                        printName(dir, 1);
-                        printFileData(file, content[i + 26], content[i + 28]);
+                    {
+                        Node *node_ptr = (Node *)malloc(sizeof(Node));
+                        node_ptr->type = 1;
+                        strcpy(node_ptr->name, rootNode_ptr->name);
+                        strcpy(node_ptr->name+strlen(rootNode_ptr->name), dir);
+                        rootNode_ptr->file_count++;
+                        node_ptr->dir_count = 0;
+                        node_ptr->file_count = 0;
+                        node_ptr->fatherNode = rootNode_ptr;
+                        node_ptr->sonNode = NULL;
+                        node_ptr->siblingNode = NULL;
+                        if(rootNode_ptr->sonNode == NULL){
+                            rootNode_ptr->sonNode = node_ptr;
+//                            printf("f son %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->name);
+                        }else{
+                            if(rootNode_ptr->sonNode->siblingNode == NULL){
+                                rootNode_ptr->sonNode->siblingNode = node_ptr;
+//                                printf("f sib %s\t %s\n", rootNode_ptr->name, rootNode_ptr->sonNode->siblingNode->name);
+                            }else{
+                                Node *indexNode = rootNode_ptr->sonNode->siblingNode;
+                                while (1) {
+                                    if(indexNode->siblingNode == NULL){
+                                        indexNode->siblingNode = node_ptr;
+                                        break;
+                                    }
+                                    indexNode = indexNode->siblingNode;
+                                }
+//                                printf("f sib %s\t %s\n", rootNode_ptr->name, indexNode->siblingNode->name);
+                            }
+                        }
+                        
+                        char temp[100];
+                        char *printDir = temp;
+                        strcpy(printDir, directory);
+                        strcpy(printDir+strlen(directory), dir);
+                        printName(printDir, 1);
+//                        printFileData(file, content[i + 26], content[i + 28]);
+                    }
                         break;
                     default:
                         break;
@@ -290,14 +479,14 @@ void printName(char *str, int type){
 /**
  通过 FAT 表找到文件的下一个簇号
  */
-int getFATValue(FILE *file , int num) {
+int getFATValue(FILE *file, int num){
     //FAT1的偏移字节
     int fatBase = 512;
     //FAT项的偏移字节
     int fatPos = fatBase + num * 3 / 2;
     //奇偶FAT项处理方式不同，分类进行处理，从0号FAT项开始
     int type = 0;
-    if (num % 2 == 0) {
+    if (num % 2 == 0){
         type = 0;
     } else {
         type = 1;
