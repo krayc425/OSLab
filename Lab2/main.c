@@ -2,6 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define PROMPT_START "----------Load image-----------"
+#define PROMPT_PRINT "----------Print files----------"
+#define PROMPT_ENTER "--------Enter commands---------"
+#define PROMPT_END   "--------------End--------------"
+#define PROMPT_NOT_FOUND "No such directory or file"
+#define PROMPT_NOT_DIR "Not a directory"
+
 typedef unsigned char u8;   //1字节
 typedef unsigned short u16; //2字节
 typedef unsigned int u32;   //4字节
@@ -60,7 +67,6 @@ struct TreeNode{
     char name[100];
     int dir_count;
     int file_count;
-    struct TreeNode *fatherNode;
     struct TreeNode *sonNode;       //子目录/文件
     struct TreeNode *siblingNode;   //若有>1的子目录/文件，存在这里
     int clus;                       //文件簇号
@@ -72,6 +78,8 @@ typedef struct TreeNode Node;
 
 //Nasm 中的打印函数
 void my_print(char c);
+//
+void my_print_str(char *str);
 //打印根目录
 void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr);
 //打印一般目录
@@ -84,8 +92,8 @@ void printFileData(int clus, int size);
 int isInValidChar(char c);
 //判断是否为可以打印的字符
 int isPrintableChar(char c);
-//打印文件名，type = 0: 目录，1: 文件
-void printName(char *str, int type);
+//打印字符串（调用 my_print）
+void printString(char *str);
 //判断路径是否代表一个文件
 int isFile(char *path);
 //数多少个文件和目录
@@ -94,14 +102,13 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount);
 int printDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount);
 
 int main(){
-    printf("----------Load image-----------\n");
+    printString(PROMPT_START);
     
     //In CentOS
-//    fat12 = fopen("/home/krayc425/Desktop/Link to Desktop/a.img", "rb+");
+   	fat12 = fopen("/home/krayc425/Desktop/Link to Desktop/a.img", "rb+");
     //In macOS
-	fat12 = fopen("/Users/Kray/Desktop/a.img", "rb");
+	// fat12 = fopen("/Users/Kray/Desktop/a.img", "rb");
     if (fat12 == NULL) {
-        printf("failed to open img!\n");
         return 0;
     }
     
@@ -141,11 +148,11 @@ int main(){
     rootNode_ptr->siblingNode = NULL;
     strcpy(rootNode_ptr->name, "/");
     
-    printf("----------Print files----------\n");
+    printString(PROMPT_PRINT);
     
     printRoot(19 * 512, rootEntry_ptr, rootNode_ptr);
     
-    printf("----------Enter commands-------\n");
+    printString(PROMPT_ENTER);
     
     while (1) {
         printf(">>>> ");
@@ -158,18 +165,16 @@ int main(){
             break;
         }else if(command[0] == 'c'){
             if(countDirectoryAndFile(command + 6, rootNode_ptr, 0) == 0){
-                printf("No such directory or file\n");
+                printString(PROMPT_NOT_FOUND);
             }
         }else if(command[0] == '/'){
             if(printDirectoryAndFile(command, rootNode_ptr, 0) == 0){
-                printf("No such directory or file\n");
+                printString(PROMPT_NOT_FOUND);
             }
-        }else if(command[0] == 'l'){
-            printRoot(19 * 512, rootEntry_ptr, rootNode_ptr);
         }
     }
     
-    printf("--------------End--------------\n");
+    printString(PROMPT_END);
     
     fclose(fat12);
 
@@ -182,10 +187,12 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
     tmpStr[strlen(path)] = '\0';
     
     if(strcmp(path, tmpStr) == 0){
-        if(isFile(path)){
-            printf("Not a directory\n");
+        if(isFile(path)){   //给的路径不是目录
+            printString(PROMPT_NOT_DIR);
         }else{
-            printf("%d directories and %d files in %s\n", rootNode_ptr->dir_count, rootNode_ptr->file_count, rootNode_ptr->name);
+            if(!isFile(rootNode_ptr->name)){    //要输出的文件路径不是目录
+                printf("%d directories and %d files in %s\n", rootNode_ptr->dir_count, rootNode_ptr->file_count, rootNode_ptr->name);
+            }
         }
         fileCount++;
     }
@@ -211,10 +218,10 @@ int printDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
     tmpStr[strlen(path)] = '\0';
     
     if(strcmp(path, tmpStr) == 0){
-        if(isFile(path)){
+        if(isFile(path)){   //文件：输出内容
             printFileData(rootNode_ptr->clus, rootNode_ptr->fileSize);
-        }else{
-            printf("%s\n", rootNode_ptr->name);
+        }else{  //目录：打印目录名字
+            printString(rootNode_ptr->name);
         }
         fileCount++;
     }
@@ -287,7 +294,6 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
                         rootNode_ptr->dir_count++;
                         node_ptr->dir_count = 0;
                         node_ptr->file_count = 0;
-                        node_ptr->fatherNode = rootNode_ptr;
                         node_ptr->sonNode = NULL;
                         node_ptr->siblingNode = NULL;
 
@@ -311,7 +317,7 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
                             }
                         }
                         
-                        printName(node_ptr->name, 0);
+                        printString(node_ptr->name);
                         printFile(rootEntry_ptr->DIR_FstClus, filename, node_ptr);
                     }
                         break;
@@ -324,7 +330,6 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
                         rootNode_ptr->file_count++;
                         node_ptr->dir_count = 0;
                         node_ptr->file_count = 0;
-                        node_ptr->fatherNode = rootNode_ptr;
                         node_ptr->sonNode = NULL;
                         node_ptr->siblingNode = NULL;
                         
@@ -348,7 +353,7 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
                             }
                         }
                         
-                        printName(node_ptr->name, 1);
+                        printString(node_ptr->name);
                         printFile(rootEntry_ptr->DIR_FstClus, filename, node_ptr);
                     }
                         break;
@@ -437,7 +442,6 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                         rootNode_ptr->dir_count++;
                         node_ptr->dir_count = 0;
                         node_ptr->file_count = 0;
-                        node_ptr->fatherNode = rootNode_ptr;
                         node_ptr->sonNode = NULL;
                         node_ptr->siblingNode = NULL;
                         
@@ -464,8 +468,8 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                         char *printDir = temp;
                         strcpy(printDir, directory);
                         strcpy(printDir+strlen(directory), dir);
-                        printName(node_ptr->name, 0);
                         
+                        printString(node_ptr->name);
                         printFile(content[i + 26], dir, node_ptr);
                     }
                         break;
@@ -478,7 +482,6 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                         rootNode_ptr->file_count++;
                         node_ptr->dir_count = 0;
                         node_ptr->file_count = 0;
-                        node_ptr->fatherNode = rootNode_ptr;
                         node_ptr->sonNode = NULL;
                         node_ptr->siblingNode = NULL;
                         
@@ -502,7 +505,7 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                             }
                         }
                         
-                        printName(node_ptr->name, 1);
+                        printString(node_ptr->name);
                     }
                         break;
                     default:
@@ -510,7 +513,7 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                 }
             }
         }
-        clusNum += 1;
+        clusNum++;
         currentClus = clusNum;
     }
 }
@@ -534,14 +537,20 @@ void printFileData(int clus, int size){
         }
     }
     data[realLength] = '\0';
-    printf("%s\n", data);
+    printString(data);
 }
 
 /**
  打印文件名，包括目录和文件
  */
-void printName(char *str, int type){
-    printf("%s\n", str);
+void printString(char *str){
+    int i = 0;
+    while (str[i] != '\0') {
+        my_print(str[i]);
+        i++;
+    }
+    my_print('\n');
+//    my_print_str(str);
 }
 
 /**
