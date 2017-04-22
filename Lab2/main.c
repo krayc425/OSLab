@@ -5,7 +5,7 @@
 #define PROMPT_START "----------Load image-----------"
 #define PROMPT_PRINT "----------Print files----------"
 #define PROMPT_ENTER "--------Enter commands---------"
-#define PROMPT_END   "--------------End--------------"
+#define PROMPT_END   "-----------Good bye------------"
 #define PROMPT_NOT_FOUND "No such directory or file"
 #define PROMPT_NOT_DIR "Not a directory"
 #define PROMPT_COMMAND ">>>>>>"
@@ -101,7 +101,7 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount);
 int printDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount);
 
 int main(){
-    printString(PROMPT_START);
+//    printString(PROMPT_START);
     
    	fat12 = fopen("a.img", "rb+");
     if (fat12 == NULL) {
@@ -125,12 +125,12 @@ int main(){
         FATSz = bpb_ptr->BPB_TotSec32;
     }
     
-    printf("BytsPerSec\t%d\n", BytsPerSec);
-    printf("SecPerClus\t%d\n", SecPerClus);
-    printf("RsvdSecCnt\t%d\n", RsvdSecCnt);
-    printf("NumFATs\t\t%d\n",  NumFATs);
-    printf("RootEntCnt\t%d\n", RootEntCnt);
-    printf("FATSz\t\t%d\n",    FATSz);
+//    printf("BytsPerSec\t%d\n", BytsPerSec);
+//    printf("SecPerClus\t%d\n", SecPerClus);
+//    printf("RsvdSecCnt\t%d\n", RsvdSecCnt);
+//    printf("NumFATs\t\t%d\n",  NumFATs);
+//    printf("RootEntCnt\t%d\n", RootEntCnt);
+//    printf("FATSz\t\t%d\n",    FATSz);
     
     struct RootEntry rootEntry;
     struct RootEntry *rootEntry_ptr = &rootEntry;
@@ -187,7 +187,45 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
             printString(PROMPT_NOT_DIR);
         }else{
             if(!isFile(rootNode_ptr->name)){    //要输出的文件路径不是目录
-                printf("%d directories and %d files in %s\n", rootNode_ptr->dir_count, rootNode_ptr->file_count, rootNode_ptr->name);
+                char *result = (char *)malloc(50);
+                int len = 0;
+                //存储目录数
+                int temp = 1;
+                while (rootNode_ptr->dir_count / (temp * 10) >= 1) {
+                    temp *= 10;
+                }
+                while (temp >= 1) {
+                    result[len] = ((rootNode_ptr->dir_count / temp) % 10) + '0';
+                    len++;
+                    temp /= 10;
+                }
+                char *t = (char *)" directories and ";
+                for (int i = 0; i < strlen(t); i++) {
+                    result[len+i] = *(t + i);
+                }
+                len += strlen(t);
+                //存储文件数
+                temp = 1;
+                while (rootNode_ptr->file_count / (temp * 10) >= 1) {
+                    temp *= 10;
+                }
+                while (temp >= 1) {
+                    result[len] = ((rootNode_ptr->file_count / temp) % 10) + '0';
+                    len++;
+                    temp /= 10;
+                }
+                t = (char *)" files in ";
+                for (int i = 0; i < strlen(t); i++) {
+                    result[len+i] = *(t + i);
+                }
+                len += strlen(t);
+                //目录或文件名
+                t = (char *)rootNode_ptr->name;
+                for (int i = 0; i < strlen(t); i++) {
+                    result[len+i] = *(t + i);
+                }
+                result[len+strlen(t)] = '\0';
+                printString(result);
             }
         }
         fileCount++;
