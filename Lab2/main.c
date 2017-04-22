@@ -8,6 +8,7 @@
 #define PROMPT_END   "--------------End--------------"
 #define PROMPT_NOT_FOUND "No such directory or file"
 #define PROMPT_NOT_DIR "Not a directory"
+#define PROMPT_COMMAND ">>>>>>"
 
 typedef unsigned char u8;   //1字节
 typedef unsigned short u16; //2字节
@@ -77,8 +78,6 @@ typedef struct TreeNode Node;
 #pragma pack () /*取消指定对齐，恢复缺省对齐*/
 
 //Nasm 中的打印函数
-void my_print(char c);
-//
 void my_print_str(char *str);
 //打印根目录
 void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr);
@@ -92,7 +91,7 @@ void printFileData(int clus, int size);
 int isInValidChar(char c);
 //判断是否为可以打印的字符
 int isPrintableChar(char c);
-//打印字符串（调用 my_print）
+//打印字符串（调用 my_print_str）
 void printString(char *str);
 //判断路径是否代表一个文件
 int isFile(char *path);
@@ -104,10 +103,7 @@ int printDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount);
 int main(){
     printString(PROMPT_START);
     
-    //In CentOS
-   	fat12 = fopen("/home/krayc425/Desktop/Link to Desktop/a.img", "rb+");
-    //In macOS
-	// fat12 = fopen("/Users/Kray/Desktop/a.img", "rb");
+   	fat12 = fopen("a.img", "rb+");
     if (fat12 == NULL) {
         return 0;
     }
@@ -155,7 +151,7 @@ int main(){
     printString(PROMPT_ENTER);
     
     while (1) {
-        printf(">>>> ");
+        printString(PROMPT_COMMAND);
         char command[100];
         char path[100];
         char *command_str = command;
@@ -544,13 +540,8 @@ void printFileData(int clus, int size){
  打印文件名，包括目录和文件
  */
 void printString(char *str){
-    int i = 0;
-    while (str[i] != '\0') {
-        my_print(str[i]);
-        i++;
-    }
-    my_print('\n');
-//    my_print_str(str);
+    //调用 nasm
+    my_print_str(str);
 }
 
 /**
