@@ -14,16 +14,16 @@ typedef unsigned char u8;   //1字节
 typedef unsigned short u16; //2字节
 typedef unsigned int u32;   //4字节
 
-int  BytsPerSec;    //每扇区字节数
-int  SecPerClus;    //每簇扇区数
-int  RsvdSecCnt;    //Boot记录占用的扇区数
-int  NumFATs;       //FAT表个数
-int  RootEntCnt;    //根目录最大文件数
-int  FATSz;         //FAT扇区数
+int BytsPerSec;    //每扇区字节数
+int SecPerClus;    //每簇扇区数
+int RsvdSecCnt;    //Boot记录占用的扇区数
+int NumFATs;       //FAT表个数
+int RootEntCnt;    //根目录最大文件数
+int FATSz;         //FAT扇区数
 
 FILE *fat12;        //读取的硬盘文件
 
-#pragma pack (1) /*指定按1字节对齐*/
+#pragma pack (1)    //指定按1字节对齐
 
 //偏移11个字节   Volume Boot Record  长度25字节
 struct BPB{
@@ -64,10 +64,10 @@ struct RootEntry{
                                  son -- sibling
 */
 struct TreeNode{
-    int type;
-    char name[100];
-    int dir_count;
-    int file_count;
+    int type;                       //类型，是文件还是目录
+    char name[100];                 //文件名
+    int dir_count;                  //目录数量
+    int file_count;                 //文件数量
     struct TreeNode *sonNode;       //子目录/文件
     struct TreeNode *siblingNode;   //若有>1的子目录/文件，存在这里
     int clus;                       //文件簇号
@@ -75,15 +75,15 @@ struct TreeNode{
 };
 typedef struct TreeNode Node;
 
-#pragma pack () /*取消指定对齐，恢复缺省对齐*/
+#pragma pack ()     //取消指定对齐，恢复缺省对齐
 
 //Nasm 中的打印函数
-void my_print_str(char *str);
+void my_print_str(char *str, int type);
 //打印根目录
 void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr);
 //打印一般目录
 void printFile(int clus, char *directory, Node *rootNode);
-//得到 FAT
+//得到 FAT 表并找到下一个簇号
 int getFATValue(int num);
 //打印文件内容
 void printFileData(int clus, int size);
@@ -92,7 +92,7 @@ int isInValidChar(char c);
 //判断是否为可以打印的字符
 int isPrintableChar(char c);
 //打印字符串（调用 my_print_str）
-void printString(char *str);
+void printString(char *str, int type);
 //判断路径是否代表一个文件
 int isFile(char *path);
 //数多少个文件和目录
@@ -101,8 +101,7 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount);
 int printDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount);
 
 int main(){
-//    printString(PROMPT_START);
-    
+    //读取映像文件
    	fat12 = fopen("a.img", "rb+");
     if (fat12 == NULL) {
         return 0;
@@ -110,8 +109,9 @@ int main(){
     
     struct BPB bpb;
     struct BPB *bpb_ptr = &bpb;
-    fseek(fat12, 11, SEEK_SET); //SEEK_SET表示文件头
-    fread(bpb_ptr, 1, 25, fat12);  //读取25字节（BPB）到 bpb
+    //移到11字节偏移处
+    fseek(fat12, 11, SEEK_SET);     //SEEK_SET表示文件头
+    fread(bpb_ptr, 1, 25, fat12);   //读取25字节（BPB）到 bpb
     
     //初始化变量
     BytsPerSec = bpb_ptr->BPB_BytsPerSec;
@@ -132,6 +132,7 @@ int main(){
 //    printf("RootEntCnt\t%d\n", RootEntCnt);
 //    printf("FATSz\t\t%d\n",    FATSz);
     
+    //初始化根目录指针
     struct RootEntry rootEntry;
     struct RootEntry *rootEntry_ptr = &rootEntry;
     
@@ -144,56 +145,65 @@ int main(){
     rootNode_ptr->siblingNode = NULL;
     strcpy(rootNode_ptr->name, "/");
     
-    printString(PROMPT_PRINT);
+    //开始打印文件目录
+    printString(PROMPT_PRINT, 2);
+    printRoot(19 * BytsPerSec, rootEntry_ptr, rootNode_ptr);
     
-    printRoot(19 * 512, rootEntry_ptr, rootNode_ptr);
-    
-    printString(PROMPT_ENTER);
-    
+    //开始接受命令
+    printString(PROMPT_ENTER, 2);
     while (1) {
-        printString(PROMPT_COMMAND);
+        printString(PROMPT_COMMAND, 2);
         char command[100];
         char path[100];
         char *command_str = command;
         fgets(command, 100, stdin);
         command[strlen(command) - 1] = '\0';
         if(command[0] == 'e'){
+            //exit：退出
             break;
         }else if(command[0] == 'c'){
+            //count：计算目录/文件数量，如果 fileCount=0 则表示没找到
             if(countDirectoryAndFile(command + 6, rootNode_ptr, 0) == 0){
-                printString(PROMPT_NOT_FOUND);
+                printString(PROMPT_NOT_FOUND, 2);
             }
         }else if(command[0] == '/'){
+            //直接输入路径，打印目录或者文件内容，如果 fileCount=0 则表示没找到
             if(printDirectoryAndFile(command, rootNode_ptr, 0) == 0){
-                printString(PROMPT_NOT_FOUND);
+                printString(PROMPT_NOT_FOUND, 2);
             }
         }
     }
     
-    printString(PROMPT_END);
-    
+    //结束
+    printString(PROMPT_END, 2);
     fclose(fat12);
-
     return 0;
 }
 
+/**
+ * 数多少个文件和目录
+ */
 int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
     char tmpStr[strlen(path)];
     strcpy(tmpStr, rootNode_ptr->name);
     tmpStr[strlen(path)] = '\0';
     
     if(strcmp(path, tmpStr) == 0){
-        if(isFile(path)){   //给的路径不是目录
-            printString(PROMPT_NOT_DIR);
+        if(isFile(path)){  
+            //给的路径不是目录
+            printString(PROMPT_NOT_DIR, 2);
         }else{
-            if(!isFile(rootNode_ptr->name)){    //要输出的文件路径不是目录
-                char *result = (char *)malloc(50);
+            if(!isFile(rootNode_ptr->name)){    
+                //要输出的文件路径不是目录
+                char *result = (char *)malloc(200);
                 int len = 0;
                 //存储目录数
                 int temp = 1;
+                    //转成数字
                 while (rootNode_ptr->dir_count / (temp * 10) >= 1) {
                     temp *= 10;
                 }
+                    //存成字符串
                 while (temp >= 1) {
                     result[len] = ((rootNode_ptr->dir_count / temp) % 10) + '0';
                     len++;
@@ -206,9 +216,11 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
                 len += strlen(t);
                 //存储文件数
                 temp = 1;
+                    //转成数字
                 while (rootNode_ptr->file_count / (temp * 10) >= 1) {
                     temp *= 10;
                 }
+                    //存成字符串
                 while (temp >= 1) {
                     result[len] = ((rootNode_ptr->file_count / temp) % 10) + '0';
                     len++;
@@ -219,13 +231,13 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
                     result[len+i] = *(t + i);
                 }
                 len += strlen(t);
-                //目录或文件名
+                //当前目录或文件名
                 t = (char *)rootNode_ptr->name;
                 for (int i = 0; i < strlen(t); i++) {
                     result[len+i] = *(t + i);
                 }
                 result[len+strlen(t)] = '\0';
-                printString(result);
+                printString(result, 2);
             }
         }
         fileCount++;
@@ -246,16 +258,21 @@ int countDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
     return fileCount;
 }
 
+/**
+ * 打印目录和文件
+ */
 int printDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
     char tmpStr[strlen(path)];
     strcpy(tmpStr, rootNode_ptr->name);
     tmpStr[strlen(path)] = '\0';
     
     if(strcmp(path, tmpStr) == 0){
-        if(isFile(path)){   //文件：输出内容
+        if(isFile(path)){   
+           //文件：输出内容
             printFileData(rootNode_ptr->clus, rootNode_ptr->fileSize);
-        }else{  //目录：打印目录名字
-            printString(rootNode_ptr->name);
+        }else{  
+            //目录：打印目录名字
+            printString(rootNode_ptr->name, isFile(rootNode_ptr->name));
         }
         fileCount++;
     }
@@ -282,10 +299,12 @@ int printDirectoryAndFile(char *path, Node *rootNode_ptr, int fileCount){
 void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
     for(int i = 0; i < RootEntCnt; i++){
 
+        //移到根目录文件起始点开始读取
         fseek(fat12, base, SEEK_SET);
         fread(rootEntry_ptr, 1, 32, fat12);
 
-        if(rootEntry_ptr->DIR_Name[0] == '\0'){ //无法读取的一个字
+        if(rootEntry_ptr->DIR_Name[0] == '\0'){ 
+            //无法读取的一个字
             continue;
         }else{
             int flag = 0;
@@ -351,12 +370,15 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
                             }
                         }
                         
-                        printString(node_ptr->name);
+                        //打印目录名
+                        printString(node_ptr->name, 0);
+                        //打印子目录
                         printFile(rootEntry_ptr->DIR_FstClus, filename, node_ptr);
                     }
                         break;
                     case 0x20:
                     {
+                        //文件
                         Node *node_ptr = (Node *)malloc(sizeof(Node));
                         node_ptr->type = 1;
                         strcpy(node_ptr->name, rootNode_ptr->name);
@@ -387,8 +409,8 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
                             }
                         }
                         
-                        printString(node_ptr->name);
-                        printFile(rootEntry_ptr->DIR_FstClus, filename, node_ptr);
+                        //打印文件名
+                        printString(node_ptr->name, 1);
                     }
                         break;
                     default:
@@ -402,14 +424,14 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr){
 }
 
 /**
- 递归打印目录及文件
+ 递归打印目录及目录中文件
  */
 void printFile(int clus, char *directory, Node *rootNode_ptr){
     char dir[100];
     dir[0] = '/';
     char *filename = dir + 1;
     
-    int dataBase = 512 * 33;
+    int dataBase = BytsPerSec * 33;
     
     int currentClus = clus;
     int clusNum = 0x000;  //簇号
@@ -417,19 +439,21 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
     while (clusNum < 0xFF8){
         //找到下一个簇号
         clusNum = getFATValue(currentClus);
-        if (clusNum == 0xFF7) { //坏簇
+        if (clusNum == 0xFF7) {
+            //坏簇
             break;
         }
         
-        char str[512];  //暂存从簇中读出的数据
+        //存放从簇中读出的数据
+        char str[BytsPerSec];
         char *content = str;
         
-        int startByte = dataBase + (currentClus - 2) * 512;
+        int startByte = dataBase + (currentClus - 2) * BytsPerSec;
         fseek(fat12, startByte, SEEK_SET);
-        fread(content, 1, 512, fat12);
+        fread(content, 1, BytsPerSec, fat12);
         
         //解析content中的数据,依次处理各个条目,目录下每个条目结构与根目录下的目录结构相同
-        int count = 512;  //每簇的字节数
+        int count = BytsPerSec;  //每簇的字节数
         for(int i = 0; i < count; i += 32){
             
             //过滤非目标文件
@@ -467,6 +491,7 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                 switch (content[i + 11]){
                     case 0x10:
                     {
+                        //目录
                         dir[tempRealLength] = '\0';
                         
                         Node *node_ptr = (Node *)malloc(sizeof(Node));
@@ -503,12 +528,15 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                         strcpy(printDir, directory);
                         strcpy(printDir+strlen(directory), dir);
                         
-                        printString(node_ptr->name);
+                        //打印目录名
+                        printString(node_ptr->name, 0);
+                        //打印子目录
                         printFile(content[i + 26], dir, node_ptr);
                     }
                         break;
                     case 0x20:
                     {
+                        //文件
                         Node *node_ptr = (Node *)malloc(sizeof(Node));
                         node_ptr->type = 1;
                         strcpy(node_ptr->name, rootNode_ptr->name);
@@ -539,7 +567,8 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
                             }
                         }
                         
-                        printString(node_ptr->name);
+                        //打印文件名
+                        printString(node_ptr->name, 1);
                     }
                         break;
                     default:
@@ -556,14 +585,16 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
  打印文件内容
  */
 void printFileData(int clus, int size){
-    int dataBase = 512 * 33;
-    int startByte = dataBase + (clus - 2) * 512;
+    int dataBase = BytsPerSec * 33;
+    int startByte = dataBase + (clus - 2) * BytsPerSec;
     char content[size + 1];
     char data[size + 1];
     int realLength = 0;
     char *str = content;
+    //移到文件开始处
     fseek(fat12, startByte, SEEK_SET);
     fread(content, 1, size, fat12);
+    //一个个读取 char
     for(int i = 0; i < size; i++){
         if(isPrintableChar(content[i])){
             data[realLength] = content[i];
@@ -571,15 +602,15 @@ void printFileData(int clus, int size){
         }
     }
     data[realLength] = '\0';
-    printString(data);
+    printString(data, 2);
 }
 
 /**
  打印文件名，包括目录和文件
  */
-void printString(char *str){
-    //调用 nasm
-    my_print_str(str);
+void printString(char *str, int type){
+    //调用 Nasm
+    my_print_str(str, type);
 }
 
 /**
@@ -587,7 +618,7 @@ void printString(char *str){
  */
 int getFATValue(int clusNum){
     //FAT1的偏移字节
-    int fatBase = 512;
+    int fatBase = BytsPerSec;
     //FAT项的偏移字节
     int fatPos = fatBase + clusNum * 3 / 2;
     //奇偶FAT项处理方式不同，分类进行处理，从0号FAT项开始
