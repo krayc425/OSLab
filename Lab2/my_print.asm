@@ -55,13 +55,9 @@ my_print_str:
 	mov ecx, [ebp + 8]
 	mov dword[stra], ecx
 	;move type to edx
-
 	mov edx, [ebp + 12]
 	;set color to type
-	;add edx, 48
 	mov dword[color], edx
-
-
 	call changeColor
 
 loop_print:

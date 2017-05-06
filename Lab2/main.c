@@ -8,6 +8,7 @@
 #define PROMPT_END   "-----------Good bye------------"
 #define PROMPT_NOT_FOUND "No such directory or file"
 #define PROMPT_NOT_DIR "Not a directory"
+#define PROMPT_UNKNOWN_CMD "Unknown command"
 #define PROMPT_COMMAND ">>>>>>"
 
 typedef unsigned char u8;   //1字节
@@ -23,7 +24,7 @@ int FATSz;         //FAT扇区数
 
 FILE *fat12;        //读取的硬盘文件
 
-#pragma pack (1)    //指定按1字节对齐
+//#pragma pack (1)    //指定按1字节对齐
 
 //偏移11个字节   Volume Boot Record  长度25字节
 struct BPB{
@@ -75,7 +76,7 @@ struct TreeNode{
 };
 typedef struct TreeNode Node;
 
-#pragma pack ()     //取消指定对齐，恢复缺省对齐
+//#pragma pack ()     //取消指定对齐，恢复缺省对齐
 
 //Nasm 中的打印函数
 void my_print_str(char *str, int type);
@@ -84,7 +85,7 @@ void printRoot(int base, struct RootEntry *rootEntry_ptr, Node *rootNode_ptr);
 //打印一般目录
 void printFile(int clus, char *directory, Node *rootNode);
 //得到 FAT 表并找到下一个簇号
-int getFATValue(int num);
+int findFatValue(int num);
 //打印文件内容
 void printFileData(int clus, int size);
 //判断是否为非有效的字符（非数字，字母，空格）（用于文件名）
@@ -171,6 +172,8 @@ int main(){
             if(printDirectoryAndFile(command, rootNode_ptr, 0) == 0){
                 printString(PROMPT_NOT_FOUND, 2);
             }
+        }else{
+            printString(PROMPT_UNKNOWN_CMD, 2);
         }
     }
     
@@ -436,9 +439,10 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
     int currentClus = clus;
     int clusNum = 0x000;  //簇号
     
+    //结束的簇号
     while (clusNum < 0xFF8){
         //找到下一个簇号
-        clusNum = getFATValue(currentClus);
+        clusNum = findFatValue(currentClus);
         if (clusNum == 0xFF7) {
             //坏簇
             break;
@@ -586,7 +590,7 @@ void printFile(int clus, char *directory, Node *rootNode_ptr){
  */
 void printFileData(int clus, int size){
     int dataBase = BytsPerSec * 33;
-    int startByte = dataBase + (clus - 2) * BytsPerSec;
+    int startByte = dataBase + (clus - 2) * BytsPerSec * SecPerClus;
     char content[size + 1];
     char data[size + 1];
     int realLength = 0;
@@ -616,12 +620,12 @@ void printString(char *str, int type){
 /**
  通过 FAT 表找到文件的下一个簇号
  */
-int getFATValue(int clusNum){
+int findFatValue(int clusNum){
     //FAT1的偏移字节
     int fatBase = BytsPerSec;
     //FAT项的偏移字节
-    int fatPos = fatBase + clusNum * 3 / 2;
-    //奇偶FAT项处理方式不同，分类进行处理，从0号FAT项开始
+    int fatPos = fatBase + clusNum * 3 / 2; //每个簇占1.5个字节
+    //奇偶FAT项处理方式不同，分类进行处理
     int type = 0;
     if (clusNum % 2 == 0){
         type = 0;
@@ -635,7 +639,7 @@ int getFATValue(int clusNum){
     fseek(fat12, fatPos, SEEK_SET);
     fread(bytes_ptr, 1, 2, fat12);
     
-    //u16为short，结合存储的小尾顺序和FAT项结构可以得到
+    //u16为short，存储的小尾顺序
     //type为0的话，取byte2的低4位和byte1构成的值，type为1的话，取byte2和byte1的高4位构成的值
     if (type == 0) {
         return bytes<<4;
