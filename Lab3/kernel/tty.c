@@ -64,9 +64,8 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
         char output[2] = {'\0', '\0'};
 
         if (!(key & FLAG_EXT)) {
-		put_key(p_tty, key);
-        }
-        else {
+            put_key(p_tty, key);
+        } else {
                 int raw_code = key & MASK_RAW;
                 switch(raw_code) {
                     case ENTER:
@@ -75,6 +74,9 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                     case BACKSPACE:
                         put_key(p_tty, '\b');
                         break;
+                        /**
+                         *  Modified here
+                         */
                     case TAB:
                         put_key(p_tty, '\t');
                         break;

@@ -15,13 +15,16 @@
 #include "global.h"
 #include "proto.h"
 
+void clearScreen();
 
 /*======================================================================*
                             kernel_main
  *======================================================================*/
 PUBLIC int kernel_main()
 {
-	disp_str("-----\"kernel_main\" begins-----\n");
+    disp_str("-----\"kernel_main\" begins!-----\n");
+    
+    clearScreen();
 
 	TASK*		p_task		= task_table;
 	PROCESS*	p_proc		= proc_table;
@@ -73,11 +76,24 @@ PUBLIC int kernel_main()
 	p_proc_ready	= proc_table;
 
 	init_clock();
-        init_keyboard();
+    init_keyboard();
 
 	restart();
 
 	while(1){}
+}
+
+/**
+ *  Modified here
+ */
+void clearScreen(){
+    int i = 0;
+    disp_pos=0;
+    for(i = 0; i < SCREEN_SIZE; i++){
+        disp_str(" ");
+    }
+    disp_pos=0;
+    init_screen(tty_table);
 }
 
 /*======================================================================*

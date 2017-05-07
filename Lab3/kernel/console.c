@@ -90,6 +90,9 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
                 *(p_vmem-1) = DEFAULT_CHAR_COLOR;
             }
             break;
+            /**
+             *  Modified here
+             */
         case '\t':
             if (p_con->cursor <
                 p_con->original_addr + p_con->v_mem_limit - 1 - 4) {
@@ -118,8 +121,8 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
 *======================================================================*/
 PRIVATE void flush(CONSOLE* p_con)
 {
-        set_cursor(p_con->cursor);
-        set_video_start_addr(p_con->current_start_addr);
+    set_cursor(p_con->cursor);
+    set_video_start_addr(p_con->current_start_addr);
 }
 
 /*======================================================================*
