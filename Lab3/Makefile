@@ -48,7 +48,6 @@ clean :
 
 realclean :
 	rm -f $(OBJS) $(ORANGESBOOT) $(ORANGESKERNEL)
-	sudo rm -rf /mnt/floppy
 	sudo umount /mnt/floppy2
 
 disasm :

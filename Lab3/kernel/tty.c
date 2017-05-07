@@ -69,42 +69,45 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
         else {
                 int raw_code = key & MASK_RAW;
                 switch(raw_code) {
-                case ENTER:
-			put_key(p_tty, '\n');
-			break;
-                case BACKSPACE:
-			put_key(p_tty, '\b');
-			break;
-                case UP:
-                        if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-				scroll_screen(p_tty->p_console, SCR_DN);
-                        }
-			break;
-		case DOWN:
-			if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-				scroll_screen(p_tty->p_console, SCR_UP);
-			}
-			break;
-		case F1:
-		case F2:
-		case F3:
-		case F4:
-		case F5:
-		case F6:
-		case F7:
-		case F8:
-		case F9:
-		case F10:
-		case F11:
-		case F12:
-			/* Alt + F1~F12 */
-			if ((key & FLAG_ALT_L) || (key & FLAG_ALT_R)) {
-				select_console(raw_code - F1);
-			}
-			break;
-                default:
+                    case ENTER:
+                        put_key(p_tty, '\n');
                         break;
-                }
+                    case BACKSPACE:
+                        put_key(p_tty, '\b');
+                        break;
+                    case TAB:
+                        put_key(p_tty, '\t');
+                        break;
+                    case UP:
+                        if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
+                            scroll_screen(p_tty->p_console, SCR_DN);
+                        }
+                        break;
+                    case DOWN:
+                        if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
+                            scroll_screen(p_tty->p_console, SCR_UP);
+                        }
+                        break;
+                    case F1:
+                    case F2:
+                    case F3:
+                    case F4:
+                    case F5:
+                    case F6:
+                    case F7:
+                    case F8:
+                    case F9:
+                    case F10:
+                    case F11:
+                    case F12:
+                        /* Alt + F1~F12 */
+                        if ((key & FLAG_ALT_L) || (key & FLAG_ALT_R)) {
+                            select_console(raw_code - F1);
+                        }
+                        break;
+                    default:
+                        break;
+            }
         }
 }
 
