@@ -15,27 +15,31 @@
 #include "global.h"
 #include "proto.h"
 
+u16 clockCount = 0;
 
 /*======================================================================*
                            clock_handler
  *======================================================================*/
 PUBLIC void clock_handler(int irq)
 {
-	ticks++;
-	p_proc_ready->ticks--;
-
-	if (k_reenter != 0) {
-		return;
-	}
-
-	if (p_proc_ready->ticks > 0) {
-		return;
-	}
-
-	schedule();
-
+    clockCount++;
+    if(clockCount == 20000){
+        clockCount = 0;
+        clearScreen();
+    }
+    
+    ticks++;
+    
+    if (k_reenter != 0) {
+        return;
+    }
+    
+    p_proc_ready++;
+    
+    if (p_proc_ready >= proc_table + NR_TASKS) {
+        p_proc_ready = proc_table;
+    }
 }
-
 /*======================================================================*
                               milli_delay
  *======================================================================*/
@@ -59,5 +63,3 @@ PUBLIC void init_clock()
         put_irq_handler(CLOCK_IRQ, clock_handler);    /* 设定时钟中断处理程序 */
         enable_irq(CLOCK_IRQ);                        /* 让8259A可以接收时钟中断 */
 }
-
-

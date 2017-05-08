@@ -76,6 +76,8 @@ global	hwint13
 global	hwint14
 global	hwint15
 
+global close_int
+global open_int
 
 _start:
 	; 此时内存看上去是这样的（更详细的内存情况在 LOADER.ASM 中有说明）：
@@ -369,3 +371,7 @@ restart_reenter:
 	add	esp, 4
 	iretd
 
+close_int:
+	cli
+open_int:
+	sti

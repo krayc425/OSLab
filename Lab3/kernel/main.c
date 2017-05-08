@@ -15,22 +15,22 @@
 #include "global.h"
 #include "proto.h"
 
-void clearScreen();
+PUBLIC void clearScreen();
 
 /*======================================================================*
                             kernel_main
  *======================================================================*/
 PUBLIC int kernel_main()
 {
-    disp_str("-----\"kernel_main\" begins!-----\n");
-    
     clearScreen();
-
-	TASK*		p_task		= task_table;
-	PROCESS*	p_proc		= proc_table;
+    
+	TASK*		p_task          = task_table;
+	PROCESS*	p_proc          = proc_table;
 	char*		p_task_stack	= task_stack + STACK_SIZE_TOTAL;
-	u16		selector_ldt	= SELECTOR_LDT_FIRST;
+	u16         selector_ldt	= SELECTOR_LDT_FIRST;
 	int i;
+    
+    //每一次从 TASK 结构中读取不同的任务入口地址、堆栈栈顶和进程名，然后赋值给相应的进程表项。
 	for (i = 0; i < NR_TASKS; i++) {
 		strcpy(p_proc->p_name, p_task->name);	// name of the process
 		p_proc->pid = i;			// pid
@@ -66,10 +66,6 @@ PUBLIC int kernel_main()
 		selector_ldt += 1 << 3;
 	}
 
-	proc_table[0].ticks = proc_table[0].priority = 15;
-	proc_table[1].ticks = proc_table[1].priority =  5;
-	proc_table[2].ticks = proc_table[2].priority =  3;
-
 	k_reenter = 0;
 	ticks = 0;
 
@@ -83,51 +79,14 @@ PUBLIC int kernel_main()
 	while(1){}
 }
 
-/**
- *  Modified here
- */
 void clearScreen(){
+    close_int();
     int i = 0;
-    disp_pos=0;
+    disp_pos = 0;
     for(i = 0; i < SCREEN_SIZE; i++){
         disp_str(" ");
     }
-    disp_pos=0;
+    disp_pos = 0;
     init_screen(tty_table);
-}
-
-/*======================================================================*
-                               TestA
- *======================================================================*/
-void TestA()
-{
-	int i = 0;
-	while (1) {
-		/* disp_str("A."); */
-		milli_delay(10);
-	}
-}
-
-/*======================================================================*
-                               TestB
- *======================================================================*/
-void TestB()
-{
-	int i = 0x1000;
-	while(1){
-		/* disp_str("B."); */
-		milli_delay(10);
-	}
-}
-
-/*======================================================================*
-                               TestB
- *======================================================================*/
-void TestC()
-{
-	int i = 0x2000;
-	while(1){
-		/* disp_str("C."); */
-		milli_delay(10);
-	}
+    open_int();
 }
