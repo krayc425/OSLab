@@ -22,6 +22,9 @@ PUBLIC void clearScreen();
  *======================================================================*/
 PUBLIC int kernel_main()
 {
+    /**
+     * Modified here
+     */
     clearScreen();
     
 	TASK*		p_task          = task_table;
@@ -79,6 +82,9 @@ PUBLIC int kernel_main()
 	while(1){}
 }
 
+/**
+ * Modified here
+ */
 void clearScreen(){
     close_int();
     int i = 0;

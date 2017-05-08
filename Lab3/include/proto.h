@@ -18,13 +18,13 @@ PUBLIC u32	seg2phys(u16 seg);
 /* klib.c */
 PUBLIC void	delay(int time);
 
+/**
+ * Modified here
+ */
 /* kernel.asm */
 void restart();
 void close_int();
 void open_int();
-
-/* main.c */
-void TestA();
 
 /* i8259.c */
 PUBLIC void put_irq_handler(int irq, irq_handler handler);

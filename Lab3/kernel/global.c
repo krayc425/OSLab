@@ -21,6 +21,9 @@ PUBLIC	PROCESS		proc_table[NR_TASKS];
 
 PUBLIC	char		task_stack[STACK_SIZE_TOTAL];
 
+/**
+ * Modified here
+ */
 PUBLIC	TASK	task_table[NR_TASKS] = {{task_tty, STACK_SIZE_TTY, "tty"}};
 
 PUBLIC	TTY		tty_table[NR_CONSOLES];
