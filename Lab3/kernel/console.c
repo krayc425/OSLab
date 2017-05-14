@@ -67,10 +67,14 @@ PUBLIC int is_current_console(CONSOLE* p_con)
 /*======================================================================*
 			   out_char
  *======================================================================*/
-PUBLIC void out_char(CONSOLE* p_con, char ch)
+PUBLIC void out_char(CONSOLE* p_con, char ch, int color)
 {
 	u8* p_vmem = (u8*)(V_MEM_BASE + p_con->cursor * 2);
-
+    //查找模式下，字符存入临时数组
+    if(is_search_mode == 1){
+        search_arr[search_size++] = ch;
+    }
+    
 	switch(ch) {
         case '\n':
             if (p_con->cursor < p_con->original_addr +
@@ -84,7 +88,7 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
             if (p_con->cursor > p_con->original_addr) {
                 p_con->cursor--;
                 *(p_vmem-2) = ' ';
-                *(p_vmem-1) = DEFAULT_CHAR_COLOR;
+                *(p_vmem-1) = color;
             }
             break;
             /**
@@ -104,7 +108,7 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
             if (p_con->cursor <
                 p_con->original_addr + p_con->v_mem_limit - 1) {
                 *p_vmem++ = ch;
-                *p_vmem++ = DEFAULT_CHAR_COLOR;
+                *p_vmem++ = color;
                 p_con->cursor++;
             }
             break;

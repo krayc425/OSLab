@@ -32,3 +32,12 @@ extern  TASK            task_table[];
 extern	irq_handler	irq_table[];
 extern	TTY		tty_table[];
 extern  CONSOLE         console_table[];
+
+/**
+ *  Modified here
+ */
+EXTERN  int     is_search_mode;
+EXTERN  int     is_mask_esc;
+EXTERN  int     search_size;
+EXTERN  char    search_arr[100];
+#define SEARCH_CHAR_COLOR 0x74

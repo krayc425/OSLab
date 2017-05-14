@@ -167,44 +167,44 @@ PUBLIC void keyboard_read(TTY* p_tty)
 			key = keyrow[column];
 
 			switch(key) {
-			case SHIFT_L:
-				shift_l = make;
-				break;
-			case SHIFT_R:
-				shift_r = make;
-				break;
-			case CTRL_L:
-				ctrl_l = make;
-				break;
-			case CTRL_R:
-				ctrl_r = make;
-				break;
-			case ALT_L:
-				alt_l = make;
-				break;
-			case ALT_R:
-				alt_l = make;
-				break;
-			case CAPS_LOCK:
-				if (make) {
-					caps_lock   = !caps_lock;
-					set_leds();
-				}
-				break;
-			case NUM_LOCK:
-				if (make) {
-					num_lock    = !num_lock;
-					set_leds();
-				}
-				break;
-			case SCROLL_LOCK:
-				if (make) {
-					scroll_lock = !scroll_lock;
-					set_leds();
-				}
-				break;
-			default:
-				break;
+                case SHIFT_L:
+                    shift_l = make;
+                    break;
+                case SHIFT_R:
+                    shift_r =   make;
+                    break;
+                case CTRL_L:
+                    ctrl_l = make;
+                    break;
+                case CTRL_R:
+                    ctrl_r = make;
+                    break;
+                case ALT_L:
+                    alt_l = make;
+                    break;
+                case ALT_R:
+                    alt_l = make;
+                    break;
+                case CAPS_LOCK:
+                    if (make) {
+                        caps_lock   = !caps_lock;
+                        set_leds();
+                    }
+                    break;
+                case NUM_LOCK:
+                    if (make) {
+                        num_lock    = !num_lock;
+                        set_leds();
+                    }
+                    break;
+                case SCROLL_LOCK:
+                    if (make) {
+                        scroll_lock = !scroll_lock;
+                        set_leds();
+                    }
+                    break;
+                default:
+                    break;
 			}
 
 			if (make) { /* 忽略 Break Code */

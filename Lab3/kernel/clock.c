@@ -26,7 +26,8 @@ u16 clockCount = 0;
 PUBLIC void clock_handler(int irq)
 {
     clockCount++;
-    if(clockCount == 20000){
+    //TODO 记得改回20000
+    if(clockCount == 10000){
         clockCount = 0;
         clearScreen();
     }

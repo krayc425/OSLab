@@ -27,6 +27,13 @@ PUBLIC int kernel_main()
      */
     clearScreen();
     
+    is_search_mode = 0;
+    is_mask_esc = 0;
+    search_size = 0;
+    for (int i = 0; i < 100; i++) {
+        search_arr[i] = '\0';
+    }
+    
 	TASK*		p_task          = task_table;
 	PROCESS*	p_proc          = proc_table;
 	char*		p_task_stack	= task_stack + STACK_SIZE_TOTAL;
@@ -86,6 +93,10 @@ PUBLIC int kernel_main()
  * Modified here
  */
 void clearScreen(){
+    //是查找模式就不清空
+    if(is_search_mode == 1){
+        return;
+    }
     close_int();
     int i = 0;
     disp_pos = 0;
