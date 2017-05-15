@@ -80,18 +80,39 @@ PUBLIC void out_char(CONSOLE* p_con, char ch, int color)
     
 	switch(ch) {
         case '\n':
-            if (p_con->cursor < p_con->original_addr +
-                p_con->v_mem_limit - SCREEN_WIDTH) {
-                p_con->cursor = p_con->original_addr + SCREEN_WIDTH * 
-                    ((p_con->cursor - p_con->original_addr) /
-                     SCREEN_WIDTH + 1);
+            if (p_con->cursor < p_con->original_addr + p_con->v_mem_limit - SCREEN_WIDTH) {
+//                p_con->cursor = p_con->original_addr + SCREEN_WIDTH * 
+//                    ((p_con->cursor - p_con->original_addr) / SCREEN_WIDTH + 1);
+                while(p_con->cursor < p_con->original_addr + SCREEN_WIDTH *
+                      ((p_con->cursor - p_con->original_addr) / SCREEN_WIDTH + 1) - 1){
+                    p_con->cursor+=1;
+                    *p_vmem++ = '\0';
+                    *p_vmem++ = color;
+                }
+                p_con->cursor++;
+                *p_vmem++ = '\0';
+                *p_vmem++ = color;
             }
             break;
         case '\b':
-            if (p_con->cursor > p_con->original_addr) {
-                p_con->cursor--;
-                *(p_vmem-2) = ' ';
-                *(p_vmem-1) = color;
+            if(is_search_mode == 0) {
+                if (p_con->cursor > p_con->original_addr) {
+                    //前面一个不是0，是正常字符，就删一个
+                    if(*(p_vmem-2) != '\0'){
+                        p_con->cursor--;
+                        *(p_vmem-1) = color;
+                        *(p_vmem-2) = ' ';
+                        p_vmem-=2;
+                    }else{
+                        //不然就连续删，直到遇到一个字符
+                        while(*(p_vmem-2) == '\0'){
+                            p_con->cursor--;
+                            *(p_vmem-1) = color;
+                            *(p_vmem-2) = ' ';
+                            p_vmem-=2;
+                        }
+                    }
+                }
             }
             break;
             /**
@@ -104,6 +125,8 @@ PUBLIC void out_char(CONSOLE* p_con, char ch, int color)
                 while(positionLeft > 0){
                     positionLeft--;
                     p_con->cursor+=1;
+                    *p_vmem++ = '\0';
+                    *p_vmem++ = color;
                 }
             }
             break;

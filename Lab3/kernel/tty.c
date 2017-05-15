@@ -109,7 +109,7 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                             search_size--;
                         }
                         disp_pos = p_tty->p_console->cursor;
-                        
+                        //刷新控制台
                         flush(p_tty->p_console);
                     }
                 }
@@ -142,30 +142,41 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                     break;
                 case BACKSPACE:
                 {
-                    put_key(p_tty, '\b');
                     if(is_search_mode == 0){
-                        
+                        put_key(p_tty, '\b');
                     }else{
-                        search_arr[search_size--] = '\0';
-                        u8* p_vmem = (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2);
-                        p_tty->p_console->cursor--;
-                        *(p_vmem-2) = ' ';
-                        *(p_vmem-1) = DEFAULT_CHAR_COLOR;
+                        if(is_mask_esc == 0) {
+                            search_arr[search_size] = '\0';
+                            search_size-=1;
+                            u8* p_vmem = (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2);
+                            *(p_vmem-2) = ' ';
+                            *(p_vmem-1) = DEFAULT_CHAR_COLOR;
+                            p_vmem-=2;
+                            p_tty->p_console->cursor-=1;
+                            //刷新控制台
+                            flush(p_tty->p_console);
+                        }
                     }
                 }
                     break;
                 case TAB:
+                {
                     put_key(p_tty, '\t');
+                }
                     break;
                 case UP:
+                {
                     if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
                         scroll_screen(p_tty->p_console, SCR_DN);
                     }
+                }
                     break;
                 case DOWN:
+                {
                     if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
                         scroll_screen(p_tty->p_console, SCR_UP);
                     }
+                }
                     break;
                 case F1:
                 case F2:
