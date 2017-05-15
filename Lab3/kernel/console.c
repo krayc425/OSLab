@@ -81,8 +81,6 @@ PUBLIC void out_char(CONSOLE* p_con, char ch, int color)
 	switch(ch) {
         case '\n':
             if (p_con->cursor < p_con->original_addr + p_con->v_mem_limit - SCREEN_WIDTH) {
-//                p_con->cursor = p_con->original_addr + SCREEN_WIDTH * 
-//                    ((p_con->cursor - p_con->original_addr) / SCREEN_WIDTH + 1);
                 while(p_con->cursor < p_con->original_addr + SCREEN_WIDTH *
                       ((p_con->cursor - p_con->original_addr) / SCREEN_WIDTH + 1) - 1){
                     p_con->cursor+=1;
@@ -104,8 +102,16 @@ PUBLIC void out_char(CONSOLE* p_con, char ch, int color)
                         *(p_vmem-2) = ' ';
                         p_vmem-=2;
                     }else{
-                        //不然就连续删，直到遇到一个字符
-                        while(*(p_vmem-2) == '\0'){
+                        //不然就连续删0，直到遇到一个字符
+                        //连续删回车：一直删0，直到遇到前面一个是到达屏幕最左端（为什么-1？因为一开始 cursor 在下一行第一个，-1以后相当于回到了上一行的最后一个，但是这样最后就会剩下一个，所以等会再删掉）
+                        while(*(p_vmem-2) == '\0' && ((p_con->cursor - 1) % SCREEN_WIDTH > 0)){
+                            p_con->cursor--;
+                            *(p_vmem-1) = color;
+                            *(p_vmem-2) = ' ';
+                            p_vmem-=2;
+                        }
+                        //删回车时剩下一个，也删掉
+                        if(*(p_vmem-2) == '\0'){
                             p_con->cursor--;
                             *(p_vmem-1) = color;
                             *(p_vmem-2) = ' ';
