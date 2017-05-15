@@ -40,4 +40,3 @@ EXTERN  int     is_search_mode;
 EXTERN  int     is_mask_esc;
 EXTERN  int     search_size;
 EXTERN  char    search_arr[100];
-#define SEARCH_CHAR_COLOR 0x74

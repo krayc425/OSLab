@@ -115,7 +115,6 @@
 #define PAD_MID		PAD_5			/* Middle key	*/
 #define PAD_DEL		PAD_DOT			/* Del		*/
 
-
 /************************************************************************/
 /*                         Stucture Definition                          */
 /************************************************************************/
@@ -126,7 +125,5 @@ typedef struct s_kb {
 	int	count;			/* 缓冲区中共有多少字节 */
 	char	buf[KB_IN_BYTES];	/* 缓冲区 */
 }KB_INPUT;
-
-
 
 #endif /* _ORANGES_KEYBOARD_H_ */

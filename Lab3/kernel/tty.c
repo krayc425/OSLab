@@ -73,7 +73,6 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                  */
                 case ESC:
                 {
-                    put_key(p_tty, ESC);
                     if(is_search_mode == 0){
                         //进入查找模式
                         is_search_mode = 1;
@@ -81,22 +80,37 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                         //结束查找模式
                         is_search_mode = 0;
                         is_mask_esc = 0;
-                        
+                        //恢复之前的颜色
+                        u8* p_vmem_2;
+                        for(p_vmem_2 = (u8*)V_MEM_BASE; p_vmem_2 < (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2 - search_size * 3); p_vmem_2 += 2){
+                            int flag = 1;
+                            for (int i = 0; i < search_size; i++) {
+                                if(*(p_vmem_2 + 2 * i) != search_arr[i]){
+                                    flag = 0;
+                                    break;
+                                }
+                            }
+                            if(flag == 1){
+                                for (int i = 0; i < search_size; i++) {
+                                    *(p_vmem_2 + 2 * i + 1) = DEFAULT_CHAR_COLOR;
+                                }
+                            }
+                        }
+                        //清空查找数组
                         for (int i = 0; i < 100; i++) {
                             search_arr[i] = '\0';
                         }
-                        
+                        //恢复光标，删除输入文字
                         u8* p_vmem = (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2);
-                        
                         while(search_size > 0){
+                            *(p_vmem - 2 * search_size + 1) = DEFAULT_CHAR_COLOR;
+                            *(p_vmem - 2 * search_size) = ' ';
+                            p_tty->p_console->cursor -= 1;
                             search_size--;
-                            p_tty->p_console->cursor--;
-                            
-                            *(p_vmem--) = ' ';
-                            *(p_vmem--) = DEFAULT_CHAR_COLOR;
                         }
-                        
                         disp_pos = p_tty->p_console->cursor;
+                        
+                        flush(p_tty->p_console);
                     }
                 }
                     break;
@@ -108,15 +122,38 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                         //查找模式下，按回车 = 屏蔽 esc 以外的键
                         is_mask_esc = 1;
                         //显示查找的字符
+                        u8* p_vmem;
+                        for(p_vmem = (u8*)V_MEM_BASE; p_vmem < (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2 - search_size * 3); p_vmem += 2){
+                            int flag = 1;
+                            for (int i = 0; i < search_size; i++) {
+                                if(*(p_vmem + 2 * i) != search_arr[i]){
+                                    flag = 0;
+                                    break;
+                                }
+                            }
+                            if(flag == 1){
+                                for (int i = 0; i < search_size; i++) {
+                                    *(p_vmem + 2 * i + 1) = SEARCH_CHAR_COLOR;
+                                }
+                            }
+                        }
                     }
                 }
                     break;
                 case BACKSPACE:
+                {
                     put_key(p_tty, '\b');
+                    if(is_search_mode == 0){
+                        
+                    }else{
+                        search_arr[search_size--] = '\0';
+                        u8* p_vmem = (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2);
+                        p_tty->p_console->cursor--;
+                        *(p_vmem-2) = ' ';
+                        *(p_vmem-1) = DEFAULT_CHAR_COLOR;
+                    }
+                }
                     break;
-                /**
-                 *  Modified here
-                 */
                 case TAB:
                     put_key(p_tty, '\t');
                     break;

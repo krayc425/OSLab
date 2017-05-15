@@ -24,7 +24,7 @@
 
 PRIVATE void set_cursor(unsigned int position);
 PRIVATE void set_video_start_addr(u32 addr);
-PRIVATE void flush(CONSOLE* p_con);
+PUBLIC void flush(CONSOLE* p_con);
 
 /*======================================================================*
 			   init_screen
@@ -71,6 +71,9 @@ PUBLIC void out_char(CONSOLE* p_con, char ch, int color)
 {
 	u8* p_vmem = (u8*)(V_MEM_BASE + p_con->cursor * 2);
     //查找模式下，字符存入临时数组
+    /**
+     *  Modified here
+     */
     if(is_search_mode == 1){
         search_arr[search_size++] = ch;
     }
@@ -124,7 +127,7 @@ PUBLIC void out_char(CONSOLE* p_con, char ch, int color)
 /*======================================================================*
                            flush
 *======================================================================*/
-PRIVATE void flush(CONSOLE* p_con)
+PUBLIC void flush(CONSOLE* p_con)
 {
     set_cursor(p_con->cursor);
     set_video_start_addr(p_con->current_start_addr);
@@ -155,8 +158,6 @@ PRIVATE void set_video_start_addr(u32 addr)
 	out_byte(CRTC_DATA_REG, addr & 0xFF);
 	enable_int();
 }
-
-
 
 /*======================================================================*
 			   select_console
