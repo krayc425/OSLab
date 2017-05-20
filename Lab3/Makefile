@@ -31,7 +31,7 @@ OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
-.PHONY : everything final image clean realclean disasm all buildimg
+.PHONY : everything final image clean realclean disasm all buildimg run
 
 # Default starting position
 nop :
@@ -41,14 +41,13 @@ everything : $(ORANGESBOOT) $(ORANGESKERNEL)
 
 all : realclean everything
 
-image : realclean everything clean buildimg
+image : realclean everything clean everything buildimg run
 
 clean :
 	rm -f $(OBJS)
 
 realclean :
 	rm -f $(OBJS) $(ORANGESBOOT) $(ORANGESKERNEL)
-	sudo umount /mnt/floppy2
 
 disasm :
 	$(DASM) $(DASMFLAGS) $(ORANGESKERNEL) > $(DASMOUTPUT)
@@ -57,9 +56,14 @@ disasm :
 buildimg :
 	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
 	sudo chmod -R 777 /mnt/floppy2
-	sudo cp -fv boot/loader.bin /mnt/floppy2/
-	sudo cp -fv kernel.bin /mnt/floppy2/
-	sudo mount -t proc -o loop a.img /mnt/floppy2/
+	sudo chmod -R 777 boot
+	sudo mount -o loop a.img /mnt/floppy2/
+	sudo cp -fv boot/loader.bin /mnt/floppy2/loader.bin
+	sudo cp -fv kernel.bin /mnt/floppy2/kernel.bin
+	sudo umount /mnt/floppy2
+
+run :
+	bochs -f bochsrc
 
 boot/boot.bin : boot/boot.asm boot/include/load.inc boot/include/fat12hdr.inc
 	$(ASM) $(ASMBFLAGS) -o $@ $<

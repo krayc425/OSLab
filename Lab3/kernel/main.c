@@ -27,6 +27,7 @@ PUBLIC int kernel_main()
      */
     clearScreen();
     
+    
     is_search_mode = 0;
     is_mask_esc = 0;
     search_size = 0;
@@ -82,7 +83,8 @@ PUBLIC int kernel_main()
 	p_proc_ready	= proc_table;
 
 	init_clock();
-    init_keyboard();
+    	
+	init_keyboard();
 
 	restart();
 
