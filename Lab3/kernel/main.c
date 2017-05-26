@@ -26,14 +26,14 @@ PUBLIC int kernel_main()
      * Modified here
      */
     clearScreen();
-    
-    
+
     is_search_mode = 0;
     is_mask_esc = 0;
     search_size = 0;
     for (int i = 0; i < 100; i++) {
         search_arr[i] = '\0';
     }
+    
     
 	TASK*		p_task          = task_table;
 	PROCESS*	p_proc          = proc_table;

@@ -82,6 +82,7 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                         is_mask_esc = 0;
                         //恢复之前的颜色
                         u8* p_vmem_2;
+                        //search_size * 3 是因为本身要找的字符串就有长度 search_size，所以只用找前 0 ~ search_size - 1 个就够了
                         for(p_vmem_2 = (u8*)V_MEM_BASE; p_vmem_2 < (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2 - search_size * 3); p_vmem_2 += 2){
                             int flag = 1;
                             for (int i = 0; i < search_size; i++) {
@@ -108,7 +109,6 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                             p_tty->p_console->cursor -= 1;
                             search_size--;
                         }
-                        disp_pos = p_tty->p_console->cursor;
                         //刷新控制台
                         flush(p_tty->p_console);
                     }
@@ -123,6 +123,7 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                         is_mask_esc = 1;
                         //显示查找的字符
                         u8* p_vmem;
+                        //search_size * 3 是因为本身要找的字符串就有长度 search_size，所以只用找前 0 ~ search_size - 1 个就够了
                         for(p_vmem = (u8*)V_MEM_BASE; p_vmem < (u8*)(V_MEM_BASE + p_tty->p_console->cursor * 2 - search_size * 3); p_vmem += 2){
                             int flag = 1;
                             for (int i = 0; i < search_size; i++) {
@@ -244,6 +245,9 @@ PRIVATE void tty_do_write(TTY* p_tty)
 		}
 		p_tty->inbuf_count--;
         
+        /**
+         *  Modified here
+         */
         out_char(p_tty->p_console, ch, is_search_mode == 0 ? DEFAULT_CHAR_COLOR : SEARCH_CHAR_COLOR);
 	}
 }

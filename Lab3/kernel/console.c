@@ -49,7 +49,6 @@ PUBLIC void init_screen(TTY* p_tty)
      */
     /* 第一个控制台沿用原来的光标位置 */
     p_tty->p_console->cursor = disp_pos / 2;
-    disp_pos = 0;
 
 	set_cursor(p_tty->p_console->cursor);
 }
@@ -225,8 +224,6 @@ PUBLIC void scroll_screen(CONSOLE* p_con, int direction)
 		    p_con->original_addr + p_con->v_mem_limit) {
 			p_con->current_start_addr += SCREEN_WIDTH;
 		}
-	}
-	else{
 	}
 
 	set_video_start_addr(p_con->current_start_addr);
