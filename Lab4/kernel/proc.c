@@ -8,10 +8,12 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-#include "proto.h"
+#include "tty.h"
+#include "console.h"
 #include "string.h"
 #include "proc.h"
 #include "global.h"
+#include "proto.h"
 
 /*======================================================================*
                               schedule
@@ -40,8 +42,29 @@ PUBLIC void schedule()
 /*======================================================================*
                            sys_get_ticks
  *======================================================================*/
-PUBLIC int sys_get_ticks()
-{
+PUBLIC int sys_get_ticks(){
 	return ticks;
 }
 
+/*======================================================================*
+                           sys_disp_str
+ *======================================================================*/
+
+/*
+ *  Modified here
+ */
+PUBLIC void sys_disp_str(char* str){
+	disp_str(str);
+}
+
+
+/*======================================================================*
+                        sys_process_sleep
+ *======================================================================*/
+
+/*
+ *  Modified here
+ */
+PUBLIC void sys_process_sleep(int milli_seconds){
+    disp_str("Sleep\0");
+}

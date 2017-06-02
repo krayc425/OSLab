@@ -19,5 +19,8 @@ Operation System Lab Homework
     * Press `Esc` to enter search mode. In search mode, after inputting some characters, press `Enter`, it will search the matched string of the previous input. Press `Esc` again to exit search mode. In search mode, screen doesn't clears.
     * Screen clears every 20 seconds.
 # Lab4
-* TODO
+* In `syscall.asm` and `proc.c`:
+    * `void sys_disp_str(char* str)`: Print the string `str` by system call method.
+    * `void sys_process_sleep(int milli_seconds)`: Make process sleep for `milli_seconds` milliseconds.
+* TO BE CONTINUED 
 

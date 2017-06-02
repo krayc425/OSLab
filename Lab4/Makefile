@@ -24,13 +24,14 @@ DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 # This Program
 ORANGESBOOT	= boot/boot.bin boot/loader.bin
 ORANGESKERNEL	= kernel.bin
-OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o kernel/clock.o\
+OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
+			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
 			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
 			lib/kliba.o lib/klib.o lib/string.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
-.PHONY : everything final image clean realclean disasm all buildimg bochs
+.PHONY : everything final image clean realclean disasm all buildimg run bochs
 
 # Default starting position
 nop :
@@ -40,9 +41,7 @@ everything : $(ORANGESBOOT) $(ORANGESKERNEL)
 
 all : realclean everything
 
-run : image bochs
-
-image : realclean everything clean buildimg
+image : realclean everything clean everything buildimg run
 
 clean :
 	rm -f $(OBJS)
@@ -56,12 +55,16 @@ disasm :
 # We assume that "a.img" exists in current folder
 buildimg :
 	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
+	sudo chmod -R 777 /mnt/floppy2
+	sudo chmod -R 777 boot
 	sudo mount -o loop a.img /mnt/floppy2/
-	sudo cp -fv boot/loader.bin /mnt/floppy2/
-	sudo cp -fv kernel.bin /mnt/floppy2
+	sudo cp -fv boot/loader.bin /mnt/floppy2/loader.bin
+	sudo cp -fv kernel.bin /mnt/floppy2/kernel.bin
 	sudo umount /mnt/floppy2
 
-bochs :
+run : image bochs
+
+bochs:
 	bochs -f bochsrc
 
 boot/boot.bin : boot/boot.asm boot/include/load.inc boot/include/fat12hdr.inc
@@ -88,6 +91,15 @@ kernel/main.o: kernel/main.c include/type.h include/const.h include/protect.h in
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/clock.o: kernel/clock.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/keyboard.o: kernel/keyboard.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/tty.o: kernel/tty.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/console.o: kernel/console.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/i8259.o: kernel/i8259.c include/type.h include/const.h include/protect.h include/proto.h

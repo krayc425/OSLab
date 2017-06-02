@@ -343,7 +343,14 @@ sys_call:
 
         sti
 
+; Modified here
+		push 	ebx	;压栈参数
+
         call    [sys_call_table + eax * 4]
+
+; Modified here
+		add		esp, 4	 ;栈顶指针+4
+
         mov     [esi + EAXREG - P_STACKBASE], eax
 
         cli
@@ -352,11 +359,11 @@ sys_call:
 
 
 ; ====================================================================================
-;				    restart
+;                                   restart
 ; ====================================================================================
 restart:
 	mov	esp, [p_proc_ready]
-	lldt	[esp + P_LDT_SEL]
+	lldt	[esp + P_LDT_SEL] 
 	lea	eax, [esp + P_STACKTOP]
 	mov	dword [tss + TSS3_S_SP0], eax
 restart_reenter:

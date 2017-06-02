@@ -8,18 +8,21 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-#include "proto.h"
 #include "string.h"
 #include "proc.h"
+#include "tty.h"
+#include "console.h"
 #include "global.h"
+#include "proto.h"
 
+PUBLIC void clearScreen();
 
 /*======================================================================*
                             kernel_main
  *======================================================================*/
 PUBLIC int kernel_main()
 {
-	disp_str("-----\"kernel_main\" begins-----\n");
+    //clearScreen();
 
 	TASK*		p_task		= task_table;
 	PROCESS*	p_proc		= proc_table;
@@ -70,17 +73,24 @@ PUBLIC int kernel_main()
 
 	p_proc_ready	= proc_table;
 
-        /* 初始化 8253 PIT */
-        out_byte(TIMER_MODE, RATE_GENERATOR);
-        out_byte(TIMER0, (u8) (TIMER_FREQ/HZ) );
-        out_byte(TIMER0, (u8) ((TIMER_FREQ/HZ) >> 8));
-
-        put_irq_handler(CLOCK_IRQ, clock_handler); /* 设定时钟中断处理程序 */
-        enable_irq(CLOCK_IRQ);                     /* 让8259A可以接收时钟中断 */
+	init_clock();
+        init_keyboard();
 
 	restart();
 
+	char str[100];	
+
 	while(1){}
+}
+
+void clearScreen(){
+    int i = 0;
+    disp_pos = 0;
+    for(i = 0; i < SCREEN_SIZE; i++){
+        disp_str(" ");
+    }
+    disp_pos = 0;
+    init_screen(tty_table);
 }
 
 /*======================================================================*
@@ -91,6 +101,9 @@ void TestA()
 	int i = 0;
 	while (1) {
 		disp_str("A.");
+		char str[100];
+        	strcpy(str, "abcdefg\0");
+		disp_str_2(str);
 		milli_delay(10);
 	}
 }
@@ -103,6 +116,7 @@ void TestB()
 	int i = 0x1000;
 	while(1){
 		disp_str("B.");
+        	process_sleep(100);
 		milli_delay(10);
 	}
 }
