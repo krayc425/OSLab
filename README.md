@@ -16,6 +16,8 @@ Operation System Lab Homework
 * `my_print.asm`: Print a string, called by `main.c`.
 # Lab3
 * Receive input from keyboard and show them on display.
-    * Press `Esc` to enter search mode. In search mode, after inputting some characters, press `Enter`, it will search the matching string of the previous input. Press `Esc` again to exit search mode.
+    * Press `Esc` to enter search mode. In search mode, after inputting some characters, press `Enter`, it will search the matched string of the previous input. Press `Esc` again to exit search mode. In search mode, screen doesn't clears.
     * Screen clears every 20 seconds.
+# Lab4
+* TODO
 
