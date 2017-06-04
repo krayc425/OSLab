@@ -8,12 +8,14 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-#include "tty.h"
-#include "console.h"
+#include "proto.h"
 #include "proc.h"
 #include "global.h"
-#include "proto.h"
 
+extern void	memset(void* p_dst, char ch, int size);
+extern void* memcpy(void* p_dst, void* p_src, int size);
+extern void init_8259A();
+extern void disp_int(int input);
 
 /* 本文件内函数声明 */
 PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type, int_handler handler, unsigned char privilege);
@@ -243,7 +245,7 @@ PUBLIC void exception_handler(int vec_no, int err_code, int eip, int cs, int efl
 {
 	int i;
 	int text_color = 0x74; /* 灰底红字 */
-	char err_description[][64] = {	"#DE Divide Error",
+	static char err_description[][64] = {	"#DE Divide Error",
 					"#DB RESERVED",
 					"—  NMI Interrupt",
 					"#BP Breakpoint",

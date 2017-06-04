@@ -11,26 +11,25 @@
 #define	EXTERN
 #endif
 
-EXTERN	int		ticks;
+EXTERN	int		    ticks;
+EXTERN  int         waiting;        //等候理发的顾客人数
+EXTERN  int         number;         //顾客编号
+EXTERN  SEMAPHORE   customers;      //顾客信号量
+EXTERN  SEMAPHORE   barbers;        //理发师信号量
+EXTERN  SEMAPHORE   mutex;          //互斥信号量
 
-EXTERN	int		disp_pos;
-EXTERN	u8		gdt_ptr[6];	// 0~15:Limit  16~47:Base
+EXTERN	int		    disp_pos;
+EXTERN	u8		    gdt_ptr[6];	// 0~15:Limit  16~47:Base
 EXTERN	DESCRIPTOR	gdt[GDT_SIZE];
-EXTERN	u8		idt_ptr[6];	// 0~15:Limit  16~47:Base
+EXTERN	u8		    idt_ptr[6];	// 0~15:Limit  16~47:Base
 EXTERN	GATE		idt[IDT_SIZE];
 
-EXTERN	u32		k_reenter;
+EXTERN	u32		    k_reenter;
 
-EXTERN	TSS		tss;
+EXTERN	TSS		    tss;
 EXTERN	PROCESS*	p_proc_ready;
-
-EXTERN	int		nr_current_console;
 
 extern	PROCESS		proc_table[];
 extern	char		task_stack[];
-extern  TASK            task_table[];
+extern  TASK        task_table[];
 extern	irq_handler	irq_table[];
-extern	TTY		tty_table[];
-extern  CONSOLE         console_table[];
-
-

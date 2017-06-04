@@ -339,31 +339,27 @@ save:
 ;                                 sys_call
 ; ====================================================================================
 sys_call:
-        call    save
+    call    save
+   	push	dword	[p_proc_ready]
+    sti
 
-        sti
+    push	ecx
+    push	ebx
+    call    [sys_call_table + eax * 4]
+    add 	esp, 4 * 3
 
-; Modified here
-		push 	ebx	;压栈参数
+    mov     [esi + EAXREG - P_STACKBASE], eax
+    cli
+    ret
 
-        call    [sys_call_table + eax * 4]
-
-; Modified here
-		add		esp, 4	 ;栈顶指针+4
-
-        mov     [esi + EAXREG - P_STACKBASE], eax
-
-        cli
-
-        ret
 
 
 ; ====================================================================================
-;                                   restart
+;				    restart
 ; ====================================================================================
 restart:
 	mov	esp, [p_proc_ready]
-	lldt	[esp + P_LDT_SEL] 
+	lldt	[esp + P_LDT_SEL]
 	lea	eax, [esp + P_STACKTOP]
 	mov	dword [tss + TSS3_S_SP0], eax
 restart_reenter:

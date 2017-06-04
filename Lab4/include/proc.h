@@ -27,15 +27,15 @@ typedef struct s_stackframe {	/* proc_ptr points here				↑ Low			*/
 	u32	ss;		/*  ┛						┷High			*/
 }STACK_FRAME;
 
-
 typedef struct s_proc {
 	STACK_FRAME regs;          /* process registers saved in stack frame */
 
 	u16 ldt_sel;               /* gdt selector giving ldt base and limit */
 	DESCRIPTOR ldts[LDT_SIZE]; /* local descriptors for code and data */
 
-        int ticks;                 /* remained ticks */
-        int priority;
+	int ticks;                 /* remained ticks */
+	int priority;
+	int sleep;				   /* 睡眠时间，*/
 
 	u32 pid;                   /* process id passed in from MM */
 	char p_name[16];           /* name of the process */
@@ -43,22 +43,40 @@ typedef struct s_proc {
 
 typedef struct s_task {
 	task_f	initial_eip;
-	int	stacksize;
+	int	    stacksize;
 	char	name[32];
 }TASK;
 
+/*信号量*/
+typedef struct semaphore {
+	int value;
+	PROCESS* list[QUEUE_LENGTH];
+    int head;
+    int tail;
+} SEMAPHORE;
+
+PUBLIC  void    sys_sem_p(SEMAPHORE*);
+PUBLIC  void    sys_sem_v(SEMAPHORE*);
+
+PUBLIC  void    sem_p(SEMAPHORE*);
+PUBLIC  void    sem_v(SEMAPHORE*);
+
+PUBLIC  void    sys_process_wakeup(PROCESS*);
+PUBLIC  void    process_wakeup(PROCESS*);
 
 /* Number of tasks */
-#define NR_TASKS	4
+#define NR_TASKS	5
 
 /* stacks of tasks */
-#define STACK_SIZE_TTY		0x8000
 #define STACK_SIZE_TESTA	0x8000
 #define STACK_SIZE_TESTB	0x8000
 #define STACK_SIZE_TESTC	0x8000
+#define STACK_SIZE_TESTD	0x8000
+#define STACK_SIZE_TESTE	0x8000
 
-#define STACK_SIZE_TOTAL	(STACK_SIZE_TTY + \
-				STACK_SIZE_TESTA + \
+#define STACK_SIZE_TOTAL	(STACK_SIZE_TESTA + \
 				STACK_SIZE_TESTB + \
-				STACK_SIZE_TESTC)
+				STACK_SIZE_TESTC + \
+				STACK_SIZE_TESTD + \
+				STACK_SIZE_TESTE)
 

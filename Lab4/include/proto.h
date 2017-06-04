@@ -25,6 +25,8 @@ void restart();
 void TestA();
 void TestB();
 void TestC();
+void TestD();
+void TestE();
 
 /* i8259.c */
 PUBLIC void put_irq_handler(int irq, irq_handler handler);
@@ -34,31 +36,18 @@ PUBLIC void spurious_irq(int irq);
 PUBLIC void clock_handler(int irq);
 PUBLIC void init_clock();
 
-/* keyboard.c */
-PUBLIC void init_keyboard();
-
-/* tty.c */
-PUBLIC void task_tty();
-PUBLIC void in_process(TTY* p_tty, u32 key);
-
-/* console.c */
-PUBLIC void out_char(CONSOLE* p_con, char ch);
-PUBLIC void scroll_screen(CONSOLE* p_con, int direction);
-
+///*信号量*/
 /* 以下是系统调用相关 */
-
-/*
- *  Modified here
- */
-
 /* proc.c */
 PUBLIC  int     sys_get_ticks();        /* sys_call */
-PUBLIC 	void	sys_disp_str(char* str);
-PUBLIC  void    sys_process_sleep(int milli_seconds);
+PUBLIC  void    sys_disp_str(char *);
+PUBLIC  void    sys_disp_color_str(char *, int);
+PUBLIC  void    sys_process_sleep(int);
 
 /* syscall.asm */
 PUBLIC  void    sys_call();             /* int_handler */
 PUBLIC  int     get_ticks();
-PUBLIC 	void 	disp_str_2(char *);
+PUBLIC  void    disp_str_1(char *);
+PUBLIC  void    disp_color_str_1(char *, int);
 PUBLIC  void    process_sleep(int);
 

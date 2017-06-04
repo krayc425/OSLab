@@ -8,13 +8,12 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
+#include "proto.h"
 #include "string.h"
 #include "proc.h"
-#include "tty.h"
-#include "console.h"
 #include "global.h"
-#include "proto.h"
 
+extern void schedule();
 
 /*======================================================================*
                            clock_handler
@@ -22,7 +21,15 @@
 PUBLIC void clock_handler(int irq)
 {
 	ticks++;
-	p_proc_ready->ticks--;
+	if (p_proc_ready->sleep == 0) {
+		p_proc_ready->ticks--;
+	}
+
+	for (int i = 0; i < NR_TASKS; i++) {
+		if (proc_table[i].sleep > 0) {
+			proc_table[i].sleep--;
+		}
+	}
 
 	if (k_reenter != 0) {
 		return;
@@ -33,7 +40,6 @@ PUBLIC void clock_handler(int irq)
 	}
 
 	schedule();
-
 }
 
 /*======================================================================*
@@ -46,18 +52,36 @@ PUBLIC void milli_delay(int milli_sec)
         while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
 }
 
+
 /*======================================================================*
-                           init_clock
+                              milli_delay_1
+ *======================================================================*/
+PUBLIC void milli_delay_1(int milli_sec)
+{
+	process_sleep(milli_sec);
+
+	schedule();
+//	while (p_proc_ready->sleep) {}
+}
+
+/*======================================================================*
+                              weakup
+ *======================================================================*/
+PUBLIC void wakeup(PROCESS* p)
+{
+	process_wakeup(p);
+}
+
+/*======================================================================*
+                            init_clock
  *======================================================================*/
 PUBLIC void init_clock()
 {
-        /* 初始化 8253 PIT */
-        out_byte(TIMER_MODE, RATE_GENERATOR);
-        out_byte(TIMER0, (u8) (TIMER_FREQ/HZ) );
-        out_byte(TIMER0, (u8) ((TIMER_FREQ/HZ) >> 8));
-
-        put_irq_handler(CLOCK_IRQ, clock_handler);    /* 设定时钟中断处理程序 */
-        enable_irq(CLOCK_IRQ);                        /* 让8259A可以接收时钟中断 */
+    /* 初始化 8253 PIT */
+    out_byte(TIMER_MODE, RATE_GENERATOR);
+    out_byte(TIMER0, (u8) (TIMER_FREQ/HZ) );
+    out_byte(TIMER0, (u8) ((TIMER_FREQ/HZ) >> 8));
+    
+    put_irq_handler(CLOCK_IRQ, clock_handler);    /* 设定时钟中断处理程序 */
+    enable_irq(CLOCK_IRQ);                        /* 让8259A可以接收时钟中断 */
 }
-
-
