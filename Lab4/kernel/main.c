@@ -36,7 +36,7 @@ PUBLIC int kernel_main()
 		strcpy(p_proc->p_name, p_task->name);	// name of the process
 		p_proc->pid = i;			// pid
         
-		p_proc->sleep = 0;
+		p_proc->sleep = 0;          //初始化睡眠时间为 0
         
 		p_proc->ldt_sel = selector_ldt;
 
@@ -71,11 +71,11 @@ PUBLIC int kernel_main()
 		proc_table[i].sleep = 0;
 	}
 
-	proc_table[0].ticks = proc_table[0].priority =  30;
-	proc_table[1].ticks = proc_table[1].priority =  30;
-	proc_table[2].ticks = proc_table[2].priority =  30;
-	proc_table[3].ticks = proc_table[3].priority =  30;
-	proc_table[4].ticks = proc_table[4].priority =  30;
+	proc_table[0].ticks = proc_table[0].priority =  1;
+	proc_table[1].ticks = proc_table[1].priority =  1;
+	proc_table[2].ticks = proc_table[2].priority =  1;
+	proc_table[3].ticks = proc_table[3].priority =  1;
+    proc_table[4].ticks = proc_table[4].priority =  1;
 
 	k_reenter = 0;
 	ticks = 0;
@@ -108,32 +108,34 @@ void clearScreen(){
     int i = 0;
     disp_pos = 0;
     for(i = 0; i < 80 * 25; i++){
-        disp_str(" ");
+        disp_str(" \0");
     }
     disp_pos = 0;
+	currentLineNum = 0;
 }
 
 void come(int number){
 	disp_color_int(number, 0x05);
-	disp_color_str_1(" come and wait\n", 0x05);
+	disp_color_str_1(" come\n\0", 0x05);
 	milli_delay(1000);
 }
 
 void getHaircut(int number){
 	disp_color_int(number, 0x06);
-	disp_color_str_1(" get haircut\n", 0x06);
+	disp_color_str_1(" cut\n\0", 0x06);
 	milli_delay(2000);
 }
 
 void leave(int number){
 	disp_color_int(number, 0x06);
-	disp_color_str_1(" leave\n", 0x06);
+	disp_color_str_1(" leave\n\0", 0x06);
 	milli_delay(1000);
 }
 
 void full(){
 	milli_delay(1000);
-	disp_color_str_1("full, leave\n", 0x09);
+	disp_color_str_1("Full \0", 0x09);
+	disp_color_str_1("leave\n\0", 0x09);
 }
 
 void customer(){
@@ -163,31 +165,29 @@ void customer(){
                                TestA
  *======================================================================*/
 void TestA(){
-	int i = 0;
 	while (1) {
 		milli_delay(10);
 	}
 }
 
 /*======================================================================*
-                               TestB（理发师进程）
+                               TestB
  *======================================================================*/
 void TestB(){
-	int i = 0x1000;
 	while(1){
 		sem_p(&customers);				/*判断是否有顾客，若无顾客，理发师睡眠*/
 		sem_p(&mutex);					/*若有顾客，进入临界区*/
 		waiting--;						/*等待顾客数减1*/
 		sem_v(&barbers);				/*理发师准备为顾客理发*/
 		milli_delay(2000);				/*理发师正在理发（非临界区）*/
-		disp_color_str_1("cut hair\n", 0x04);
+		disp_color_str_1("Cut\n\0", 0x04);
 
 		sem_v(&mutex);					/*退出临界区*/
 	}
 }
 
 /*======================================================================*
-                               TestC（顾客进程）
+                               TestC
  *======================================================================*/
 void TestC(){
 	customer();

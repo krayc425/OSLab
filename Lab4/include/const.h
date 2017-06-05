@@ -67,7 +67,10 @@
 #define SCREEN_SIZE 80 * 25
 
 /*为顾客准备的椅子数*/
-#define CHAIRS          3
+/**
+ *  Modified Here
+ */
+#define CHAIRS          1
 #define QUEUE_LENGTH    10
 
 #endif /* _ORANGES_CONST_H_ */

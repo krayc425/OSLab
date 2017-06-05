@@ -13,7 +13,6 @@
 #include "proc.h"
 #include "global.h"
 
-
 /*======================================================================*
                                itoa
  *======================================================================*/
@@ -44,7 +43,7 @@ PUBLIC char * itoa(char * str, int num)/* 数字前面的 0 不被显示出来, 
 		}
 	}
 
-	*p = 0;
+	*p = '\0';
 
 	return str;
 }
@@ -69,7 +68,6 @@ PUBLIC void disp_color_int(int input, int color)
 	itoa(output, input);
 	disp_color_str_1(output, color);
 }
-
 
 /*======================================================================*
                                delay

@@ -11,12 +11,17 @@
 #define	EXTERN
 #endif
 
+/**
+ *  Modified Here
+ */
 EXTERN	int		    ticks;
 EXTERN  int         waiting;        //等候理发的顾客人数
 EXTERN  int         number;         //顾客编号
 EXTERN  SEMAPHORE   customers;      //顾客信号量
 EXTERN  SEMAPHORE   barbers;        //理发师信号量
 EXTERN  SEMAPHORE   mutex;          //互斥信号量
+
+EXTERN	int		currentLineNum;
 
 EXTERN	int		    disp_pos;
 EXTERN	u8		    gdt_ptr[6];	// 0~15:Limit  16~47:Base

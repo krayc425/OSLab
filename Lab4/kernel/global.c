@@ -21,11 +21,13 @@ PUBLIC 	SEMAPHORE 		semaphore;
 
 PUBLIC	char			task_stack[STACK_SIZE_TOTAL];
 
-PUBLIC	TASK	task_table[NR_TASKS] = {{TestA, STACK_SIZE_TESTA, "TestA"},
+PUBLIC	TASK	task_table[NR_TASKS] = {
+                    {TestA, STACK_SIZE_TESTA, "TestA"},
 					{TestB, STACK_SIZE_TESTB, "TestB"},
 					{TestC, STACK_SIZE_TESTC, "TestC"},
 					{TestD, STACK_SIZE_TESTD, "TestD"},
-					{TestE, STACK_SIZE_TESTE, "TestE"}};
+					{TestE, STACK_SIZE_TESTE, "TestE"}
+                };
 
 PUBLIC	irq_handler		irq_table[NR_IRQ];
 

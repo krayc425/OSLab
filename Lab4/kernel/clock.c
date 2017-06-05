@@ -18,8 +18,7 @@ extern void schedule();
 /*======================================================================*
                            clock_handler
  *======================================================================*/
-PUBLIC void clock_handler(int irq)
-{
+PUBLIC void clock_handler(int irq){
 	ticks++;
 	if (p_proc_ready->sleep == 0) {
 		p_proc_ready->ticks--;
@@ -45,38 +44,31 @@ PUBLIC void clock_handler(int irq)
 /*======================================================================*
                               milli_delay
  *======================================================================*/
-PUBLIC void milli_delay(int milli_sec)
-{
+PUBLIC void milli_delay(int milli_sec){
         int t = get_ticks();
 
         while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
 }
 
-
 /*======================================================================*
                               milli_delay_1
  *======================================================================*/
-PUBLIC void milli_delay_1(int milli_sec)
-{
-	process_sleep(milli_sec);
-
+PUBLIC void milli_delay_1(int milli_sec){
+    process_sleep(milli_sec);
 	schedule();
-//	while (p_proc_ready->sleep) {}
 }
 
 /*======================================================================*
                               weakup
  *======================================================================*/
-PUBLIC void wakeup(PROCESS* p)
-{
+PUBLIC void wakeup(PROCESS* p){
 	process_wakeup(p);
 }
 
 /*======================================================================*
                             init_clock
  *======================================================================*/
-PUBLIC void init_clock()
-{
+PUBLIC void init_clock(){
     /* 初始化 8253 PIT */
     out_byte(TIMER_MODE, RATE_GENERATOR);
     out_byte(TIMER0, (u8) (TIMER_FREQ/HZ) );

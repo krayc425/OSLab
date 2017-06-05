@@ -345,7 +345,7 @@ sys_call:
 
     push	ecx
     push	ebx
-    call    [sys_call_table + eax * 4]
+    call    [sys_call_table + eax * 4]		;eax 里存的是系统调用的序号
     add 	esp, 4 * 3
 
     mov     [esi + EAXREG - P_STACKBASE], eax

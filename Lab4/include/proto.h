@@ -21,6 +21,9 @@ PUBLIC void	delay(int time);
 /* kernel.asm */
 void restart();
 
+/**
+ *  Modified Here
+ */
 /* main.c */
 void TestA();
 void TestB();
@@ -36,7 +39,6 @@ PUBLIC void spurious_irq(int irq);
 PUBLIC void clock_handler(int irq);
 PUBLIC void init_clock();
 
-///*信号量*/
 /* 以下是系统调用相关 */
 /* proc.c */
 PUBLIC  int     sys_get_ticks();        /* sys_call */

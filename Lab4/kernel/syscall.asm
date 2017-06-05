@@ -15,7 +15,7 @@ _NR_sem_p               equ 4 ;
 _NR_sem_v               equ 5 ;
 _NR_process_wakeup      equ 6 ;
 
-INT_VECTOR_SYS_CALL equ 0x90
+INT_VECTOR_SYS_CALL		equ 0x90
 
 ; 导入全局变量
 extern	disp_pos
@@ -49,17 +49,15 @@ disp_str_1:
    	int 	INT_VECTOR_SYS_CALL
    	ret
 
-
 ; ========================================================================
 ;                             disp_color_str_1
 ; ========================================================================
 disp_color_str_1:
     mov 	eax, _NR_disp_color_str_1
-   	mov 	ebx, [esp + 4]
-   	mov     ecx, [esp + 8]
+   	mov 	ebx, [esp + 4]	;argument1
+   	mov     ecx, [esp + 8]	;argument2
    	int 	INT_VECTOR_SYS_CALL
    	ret
-
 
 ; ========================================================================
 ;                             process_sleep
@@ -70,7 +68,6 @@ process_sleep:
    	int 	INT_VECTOR_SYS_CALL
    	ret
 
-
 ; ========================================================================
 ;                             process_wakeup
 ; ========================================================================
@@ -80,7 +77,6 @@ process_wakeup:
    	int 	INT_VECTOR_SYS_CALL
    	ret
 
-
 ; ========================================================================
 ;                             sem_p
 ; ========================================================================
@@ -89,8 +85,6 @@ sem_p:
    	mov 	ebx, [esp + 4]
    	int 	INT_VECTOR_SYS_CALL
    	ret
-
-
 
 ; ========================================================================
 ;                             sem_v

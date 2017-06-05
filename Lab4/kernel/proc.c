@@ -15,13 +15,10 @@
 
 extern void milli_delay_1(int milli_sec);
 extern void wakeup(PROCESS*);
-extern void openIRQ();
-extern void closeIRQ();
 /*======================================================================*
                               schedule
  *======================================================================*/
-PUBLIC void schedule()
-{
+PUBLIC void schedule(){
 	PROCESS* p;
 	int	 greatest_ticks = 0;
 
@@ -41,36 +38,47 @@ PUBLIC void schedule()
 	}
 }
 
+//以下是系统调用
+
 /*======================================================================*
                            sys_get_ticks
  *======================================================================*/
-PUBLIC int sys_get_ticks()
-{
+PUBLIC int sys_get_ticks(){
 	return ticks;
 }
 
 /*======================================================================*
                            sys_disp_str
  *======================================================================*/
-PUBLIC void sys_disp_str(char* str)
-{
+PUBLIC void sys_disp_str(char* str){
 	disp_str(str);
 }
 
 /*======================================================================*
                            sys_disp_color_str
  *======================================================================*/
-PUBLIC void sys_disp_color_str(char* str, int color)
-{
+PUBLIC void sys_disp_color_str(char* str, int color){
 	disp_color_str(str, color);
+	int i = 0;
+	while(1){
+		if(str[i] == '\0'){
+			break;
+		}
+		if(str[i] == '\n'){
+			currentLineNum++;
+		}
+		i++;
+	}
+    if(currentLineNum == 25){
+        milli_delay(1000);
+		clearScreen();
+	}
 }
-
 
 /*======================================================================*
                            sys_process_sleep
  *======================================================================*/
-PUBLIC void sys_process_sleep(int mill_seconds)
-{
+PUBLIC void sys_process_sleep(int mill_seconds){
 	p_proc_ready->sleep = mill_seconds * HZ / 1000;
 }
 
@@ -81,34 +89,26 @@ PUBLIC void sys_process_wakeup(PROCESS* p) {
 	p->sleep = 0;
 }
 
-
 /*======================================================================*
                            sys_sem_p
  *======================================================================*/
-PUBLIC void sys_sem_p(SEMAPHORE* s)
-{
-//	closeIRQ();
+PUBLIC void sys_sem_p(SEMAPHORE* s){
 	s->value--;
 	if (s->value < 0) {
 		s->list[s->head] = p_proc_ready;
 		s->head = (s->head + 1) % QUEUE_LENGTH;
 		milli_delay_1(-10);
 	}
-//	openIRQ();
 }
-
 
 /*======================================================================*
                            sys_sem_v
  *======================================================================*/
-PUBLIC void sys_sem_v(SEMAPHORE* s)
-{
-//	closeIRQ();
+PUBLIC void sys_sem_v(SEMAPHORE* s){
 	s->value++;
 	if (s->value <= 0) {
 		PROCESS* p = s->list[s->tail];
 		s->tail = (s->tail + 1) % QUEUE_LENGTH;
 		wakeup(p);
 	}
-//	openIRQ();
 }
