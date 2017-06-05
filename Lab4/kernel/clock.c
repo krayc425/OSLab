@@ -20,6 +20,7 @@ extern void schedule();
  *======================================================================*/
 PUBLIC void clock_handler(int irq){
 	ticks++;
+    
 	if (p_proc_ready->sleep == 0) {
 		p_proc_ready->ticks--;
 	}
@@ -45,21 +46,20 @@ PUBLIC void clock_handler(int irq){
                               milli_delay
  *======================================================================*/
 PUBLIC void milli_delay(int milli_sec){
-        int t = get_ticks();
-
-        while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
+    int t = get_ticks();
+    while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
 }
 
 /*======================================================================*
-                              milli_delay_1
+                              sleep
  *======================================================================*/
-PUBLIC void milli_delay_1(int milli_sec){
+PUBLIC void sleep(int milli_sec){
     process_sleep(milli_sec);
 	schedule();
 }
 
 /*======================================================================*
-                              weakup
+                              wakeup
  *======================================================================*/
 PUBLIC void wakeup(PROCESS* p){
 	process_wakeup(p);

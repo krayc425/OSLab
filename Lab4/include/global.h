@@ -21,8 +21,7 @@ EXTERN  SEMAPHORE   customers;      //顾客信号量
 EXTERN  SEMAPHORE   barbers;        //理发师信号量
 EXTERN  SEMAPHORE   mutex;          //互斥信号量
 
-EXTERN	int		currentLineNum;
-
+EXTERN	int         currentLineNum; //当前输入到第几行
 EXTERN	int		    disp_pos;
 EXTERN	u8		    gdt_ptr[6];	// 0~15:Limit  16~47:Base
 EXTERN	DESCRIPTOR	gdt[GDT_SIZE];

@@ -12,11 +12,12 @@
 #include "string.h"
 #include "proc.h"
 #include "global.h"
+#include <stdlib.h>
 
 extern void enable_irq(int irq);
 extern char* strcpy(char* p_dst, char* p_src);
 extern void milli_delay(int milli_sec);
-extern void milli_delay_1(int milli_sec);
+extern void sleep(int milli_sec);
 extern void disp_color_int(int input, int color);
 
 PUBLIC void clearScreen();
@@ -114,49 +115,51 @@ void clearScreen(){
 	currentLineNum = 0;
 }
 
-void come(int number){
-	disp_color_int(number, 0x05);
-	disp_color_str_1(" come\n\0", 0x05);
+void come(int customer){
+    disp_color_int(customer, 0x07);
+    disp_color_str_1(" come\n\0", 0x07);
+//    disp_color_int(waiting, 0x01);
+//    disp_color_str_1(" wait\n\0", 0x01);
 	milli_delay(1000);
 }
 
-void getHaircut(int number){
-	disp_color_int(number, 0x06);
+void haircut(int customer){
+	disp_color_int(customer, 0x06);
 	disp_color_str_1(" cut\n\0", 0x06);
-	milli_delay(2000);
+	milli_delay(1000);
 }
 
-void leave(int number){
-	disp_color_int(number, 0x06);
+void leave(int customer){
+	disp_color_int(customer, 0x06);
 	disp_color_str_1(" leave\n\0", 0x06);
 	milli_delay(1000);
 }
 
-void full(){
+void full(int customer){
+	disp_color_int(customer, 0x02);
+	disp_color_str_1(" full\n\0", 0x02);
 	milli_delay(1000);
-	disp_color_str_1("Full \0", 0x09);
-	disp_color_str_1("leave\n\0", 0x09);
 }
 
 void customer(){
 	int temp;
 	while(1) {
 		sem_p(&mutex);					/*进入临界区*/
+		number++;					/*顾客编号加1*/
+		temp = number;
 		if (waiting < CHAIRS) {			/*判断是否有空椅子*/
 			waiting++;					/*等待顾客加1*/
-			number++;					/*顾客编号加1*/
-			temp = number;
 			come(temp);
 			sem_v(&customers);			/*唤醒理发师*/
 			sem_v(&mutex);				/*退出临界区*/
 			sem_p(&barbers);			/*理发师忙，顾客坐着等待*/
 			sem_p(&mutex);
-			getHaircut(temp);
+			haircut(temp);
 			leave(temp);
 			sem_v(&mutex);
 		} else {
 			sem_v(&mutex);				/*人满了，顾客离开*/
-			full();
+			full(temp);
 		}
 	}
 }
@@ -166,7 +169,7 @@ void customer(){
  *======================================================================*/
 void TestA(){
 	while (1) {
-		milli_delay(10);
+		milli_delay(1000);
 	}
 }
 
@@ -179,9 +182,8 @@ void TestB(){
 		sem_p(&mutex);					/*若有顾客，进入临界区*/
 		waiting--;						/*等待顾客数减1*/
 		sem_v(&barbers);				/*理发师准备为顾客理发*/
-		milli_delay(2000);				/*理发师正在理发（非临界区）*/
+		milli_delay(7000);				/*理发师正在理发（非临界区）*/
 		disp_color_str_1("Cut\n\0", 0x04);
-
 		sem_v(&mutex);					/*退出临界区*/
 	}
 }
@@ -190,6 +192,7 @@ void TestB(){
                                TestC
  *======================================================================*/
 void TestC(){
+    sleep(2000);
 	customer();
 }
 
@@ -197,6 +200,7 @@ void TestC(){
                                TestD
  *======================================================================*/
 void TestD(){
+    sleep(4000);
 	customer();
 }
 
@@ -204,5 +208,6 @@ void TestD(){
                                TestE
  *======================================================================*/
 void TestE(){
+    sleep(6000);
 	customer();
 }

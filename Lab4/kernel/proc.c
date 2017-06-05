@@ -13,7 +13,7 @@
 #include "proc.h"
 #include "global.h"
 
-extern void milli_delay_1(int milli_sec);
+extern void sleep(int milli_sec);
 extern void wakeup(PROCESS*);
 /*======================================================================*
                               schedule
@@ -31,7 +31,7 @@ PUBLIC void schedule(){
 		}
 
 		if (!greatest_ticks) {
-			for (p = proc_table; p < proc_table+NR_TASKS; p++) {
+			for (p = proc_table; p < proc_table + NR_TASKS; p++) {
 				p->ticks = p->priority;
 			}
 		}
@@ -39,7 +39,6 @@ PUBLIC void schedule(){
 }
 
 //以下是系统调用
-
 /*======================================================================*
                            sys_get_ticks
  *======================================================================*/
@@ -97,7 +96,7 @@ PUBLIC void sys_sem_p(SEMAPHORE* s){
 	if (s->value < 0) {
 		s->list[s->head] = p_proc_ready;
 		s->head = (s->head + 1) % QUEUE_LENGTH;
-		milli_delay_1(-10);
+		sleep(-10);
 	}
 }
 
