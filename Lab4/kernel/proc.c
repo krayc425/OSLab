@@ -22,14 +22,16 @@ PUBLIC void schedule(){
 	PROCESS* p;
 	int	 greatest_ticks = 0;
 
+    //调度进程
 	while (!greatest_ticks) {
 		for (p = proc_table; p < proc_table + NR_TASKS; p++) {
-			if (p->ticks > greatest_ticks && p->sleep >= 0) {
+			if (p->ticks > greatest_ticks && p->sleep >= 0) {   //当目标进程不处于睡眠状态，切换进程
 				greatest_ticks = p->ticks;
 				p_proc_ready = p;
 			}
 		}
 
+        //重新赋值 ticks
 		if (!greatest_ticks) {
 			for (p = proc_table; p < proc_table + NR_TASKS; p++) {
 				p->ticks = p->priority;
@@ -78,7 +80,7 @@ PUBLIC void sys_disp_color_str(char* str, int color){
                            sys_process_sleep
  *======================================================================*/
 PUBLIC void sys_process_sleep(int mill_seconds){
-	p_proc_ready->sleep = mill_seconds * HZ / 1000;
+	p_proc_ready->sleep = mill_seconds / 10;
 }
 
 /*======================================================================*
@@ -92,22 +94,23 @@ PUBLIC void sys_process_wakeup(PROCESS* p) {
                            sys_sem_p
  *======================================================================*/
 PUBLIC void sys_sem_p(SEMAPHORE* s){
-	s->value--;
-	if (s->value < 0) {
-		s->list[s->head] = p_proc_ready;
+	s->value--;     //信号量值 - 1
+	if (s->value < 0) {     //结果小于 0，执行 P 操作的进程被阻塞
+		s->list[s->head] = p_proc_ready;    //排入 list 队列中
 		s->head = (s->head + 1) % QUEUE_LENGTH;
-		sleep(-10);
+		sleep(-10);     //让它一直睡眠状态
 	}
+    //否则继续执行
 }
 
 /*======================================================================*
                            sys_sem_v
  *======================================================================*/
 PUBLIC void sys_sem_v(SEMAPHORE* s){
-	s->value++;
-	if (s->value <= 0) {
+	s->value++;     //信号量值 + 1
+	if (s->value <= 0) {    //结果不大于 0，执行 V 操作的进程从 list 队列中释放一个进程
 		PROCESS* p = s->list[s->tail];
 		s->tail = (s->tail + 1) % QUEUE_LENGTH;
-		wakeup(p);
+		wakeup(p);          //并将其转换为就绪态
 	}
 }

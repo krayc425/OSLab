@@ -29,7 +29,7 @@ PUBLIC	TASK	task_table[NR_TASKS] = {
 					{TestE, STACK_SIZE_TESTE, "TestE"}
                 };
 
-PUBLIC	irq_handler		irq_table[NR_IRQ];
+PUBLIC	irq_handler		irq_table[NR_IRQ];      //中断数组
 
 PUBLIC	system_call		sys_call_table[NR_SYS_CALL] = {sys_get_ticks,
 								sys_disp_str,

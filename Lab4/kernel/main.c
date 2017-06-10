@@ -33,6 +33,9 @@ PUBLIC int kernel_main()
 	char*		p_task_stack	= task_stack + STACK_SIZE_TOTAL;
 	u16		selector_ldt	= SELECTOR_LDT_FIRST;
 	int i;
+    
+    //初始化进程表
+    //每次从 TASK 结构中读取不同任务的入口地址、堆栈栈顶和进程名，然后赋给相应的进程表项。
 	for (i = 0; i < NR_TASKS; i++) {
 		strcpy(p_proc->p_name, p_task->name);	// name of the process
 		p_proc->pid = i;			// pid
@@ -115,11 +118,13 @@ void clearScreen(){
 	currentLineNum = 0;
 }
 
+/*======================================================================*
+                            Sleep Barber Problem
+ *======================================================================*/
+
 void come(int customer){
     disp_color_int(customer, 0x07);
     disp_color_str_1(" come\n\0", 0x07);
-//    disp_color_int(waiting, 0x01);
-//    disp_color_str_1(" wait\n\0", 0x01);
 	milli_delay(1000);
 }
 
@@ -144,22 +149,22 @@ void full(int customer){
 void customer(){
 	int temp;
 	while(1) {
-		sem_p(&mutex);					/*进入临界区*/
-		number++;					/*顾客编号加1*/
-		temp = number;
-		if (waiting < CHAIRS) {			/*判断是否有空椅子*/
-			waiting++;					/*等待顾客加1*/
-			come(temp);
-			sem_v(&customers);			/*唤醒理发师*/
-			sem_v(&mutex);				/*退出临界区*/
-			sem_p(&barbers);			/*理发师忙，顾客坐着等待*/
-			sem_p(&mutex);
-			haircut(temp);
-			leave(temp);
-			sem_v(&mutex);
+		sem_p(&mutex);					//进入临界区
+		number++;                       //顾客编号加1
+		temp = number;                  //暂时记录现在的顾客是几号
+		if (waiting < CHAIRS) {			//判断是否有空椅子
+			waiting++;					//等待顾客加1
+			come(temp);                 //打印来了哪个顾客
+			sem_v(&customers);			//唤醒理发师
+			sem_v(&mutex);				//退出临界区
+			sem_p(&barbers);			//理发师忙，顾客坐着等待
+			sem_p(&mutex);              //进入临界区
+			haircut(temp);              //给顾客剪头发
+			leave(temp);                //顾客离开
+			sem_v(&mutex);              //退出临界区
 		} else {
-			sem_v(&mutex);				/*人满了，顾客离开*/
-			full(temp);
+			sem_v(&mutex);				//退出临界区
+			full(temp);                 //人满了，顾客离开
 		}
 	}
 }
@@ -174,22 +179,22 @@ void TestA(){
 }
 
 /*======================================================================*
-                               TestB
+                               TestB（理发师）
  *======================================================================*/
 void TestB(){
 	while(1){
-		sem_p(&customers);				/*判断是否有顾客，若无顾客，理发师睡眠*/
-		sem_p(&mutex);					/*若有顾客，进入临界区*/
-		waiting--;						/*等待顾客数减1*/
-		sem_v(&barbers);				/*理发师准备为顾客理发*/
-		milli_delay(7000);				/*理发师正在理发（非临界区）*/
+		sem_p(&customers);				//判断是否有顾客，若无顾客，理发师睡眠
+		sem_p(&mutex);					//若有顾客，进入临界区
+		waiting--;						//等待顾客数减1
+		sem_v(&barbers);				//理发师准备为顾客理发
+		milli_delay(7000);				//理发师正在理发（非临界区）
 		disp_color_str_1("Cut\n\0", 0x04);
-		sem_v(&mutex);					/*退出临界区*/
+		sem_v(&mutex);					//退出临界区
 	}
 }
 
 /*======================================================================*
-                               TestC
+                               TestC（顾客）
  *======================================================================*/
 void TestC(){
     sleep(2000);
@@ -197,7 +202,7 @@ void TestC(){
 }
 
 /*======================================================================*
-                               TestD
+                               TestD（顾客）
  *======================================================================*/
 void TestD(){
     sleep(4000);
@@ -205,7 +210,7 @@ void TestD(){
 }
 
 /*======================================================================*
-                               TestE
+                               TestE（顾客）
  *======================================================================*/
 void TestE(){
     sleep(6000);
