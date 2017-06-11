@@ -16,13 +16,13 @@
 extern void enable_irq(int irq);
 extern void milli_delay(int milli_sec);
 extern void disp_color_int(int input, int color);
-
+extern void strcpy(char*, char*);
 PUBLIC void clearScreen();
+
 /*======================================================================*
                             kernel_main
  *======================================================================*/
-PUBLIC int kernel_main()
-{
+PUBLIC int kernel_main(){
     clearScreen();
 
 	TASK*		p_task		= task_table;
@@ -72,13 +72,16 @@ PUBLIC int kernel_main()
 	proc_table[1].ticks = proc_table[1].priority =  0;
 	proc_table[2].ticks = proc_table[2].priority =  0;
 	proc_table[3].ticks = proc_table[3].priority =  0;
-    	proc_table[4].ticks = proc_table[4].priority =  0;
+    proc_table[4].ticks = proc_table[4].priority =  0;
 
 	k_reenter = 0;
 	ticks = 0;
 
 	p_proc_ready	= proc_table;
-
+    
+    /**
+     *  Modified Here
+     */
 	waiting			= 0;
 	number			= 0;
 
@@ -116,8 +119,8 @@ void clearScreen(){
  *======================================================================*/
 
 void come(int customer){
-	    disp_color_int(customer, 0x07);
-	    disp_color_str_1(" come\n\0", 0x07);
+    disp_color_int(customer, 0x07);
+    disp_color_str_1(" come\n\0", 0x07);
 }
 
 void haircut(int customer){
@@ -162,7 +165,7 @@ void customer(){
  *======================================================================*/
 void TestA(){
 	while (1) {
-		milli_delay(100);
+//        milli_delay(100);
 	}
 }
 

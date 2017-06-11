@@ -14,11 +14,17 @@
 #include "global.h"
 
 extern void schedule();
+extern void enable_irq(int);
 
 /*======================================================================*
                            clock_handler
  *======================================================================*/
 PUBLIC void clock_handler(int irq){
+    /**
+     *  Modified Here
+     */
+    
+    //总 ticks + 1
 	ticks++;
     //避免中断重入（楼下的函数会导致）
 	if (k_reenter != 0) {

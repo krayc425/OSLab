@@ -70,7 +70,7 @@
 /**
  *  Modified Here
  */
-#define CHAIRS          2
+#define CHAIRS          1
 #define QUEUE_LENGTH    10
 
 #endif /* _ORANGES_CONST_H_ */

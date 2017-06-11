@@ -1,5 +1,7 @@
 # OSLab
-Operation System Lab Homework
+Operation System Lab Homework.
+_Only for reference._
+
 # Lab0
 * Print "Hello World" in `Bochs`.
 
@@ -23,6 +25,9 @@ Operation System Lab Homework
     * Screen clears every 20 seconds.  
     
 # Lab4
+__Ver1__ is written by myself, but has a little problem.
+__Ver2__ is modified based on other's code.
+
 * In `syscall.asm` and `proc.c` (Added __system calls__):
     * `void sys_disp_str(char* str)`: Print the string `str`.
     * `void sys_disp_color_str(char* str, int color)`: Print the string `str` in color `color`.
