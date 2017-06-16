@@ -97,7 +97,6 @@ PUBLIC void sys_process_sleep(int mill_seconds){
  *======================================================================*/
 PUBLIC void sys_process_wakeup(PROCESS* p) {
     p->block = 0;
-    p_proc_ready = p;
 }
 
 /*======================================================================*

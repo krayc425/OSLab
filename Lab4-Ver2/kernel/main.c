@@ -128,11 +128,6 @@ void haircut(int customer){
 	disp_color_str_1(" cut\n\0", 0x06);
 }
 
-void leave(int customer){
-	disp_color_int(customer, 0x06);
-	disp_color_str_1(" leave\n\0", 0x06);
-}
-
 void full(int customer){
 	disp_color_int(customer, 0x02);
 	disp_color_str_1(" full\n\0", 0x02);
@@ -151,7 +146,6 @@ void customer(){
 			sem_v(&mutex);				//退出临界区
 			sem_p(&barbers);			//理发师忙，顾客坐着等待
 			haircut(temp);              //给顾客剪头发
-			leave(temp);                //顾客离开
 		} else {
 			sem_v(&mutex);				//退出临界区
 			full(temp);                 //人满了，顾客离开
@@ -182,6 +176,7 @@ void TestB(){
         sem_v(&mutex);                    //退出临界区
 		disp_color_str_1("Cut\n\0", 0x04);
 		process_sleep(2000);
+		disp_color_str_1("Done\n\0", 0x04);
 	}
 }
 

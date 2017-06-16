@@ -30,7 +30,7 @@ PUBLIC void clock_handler(int irq){
 	if (k_reenter != 0) {
 		return;
 	}
-    //在一个进程的 ticks 没变成 0 之前，其他进程没有机会执行
+    //ticks大于0，意味着还在睡眠
 	if (p_proc_ready->ticks > 0) {
 		return;
 	}

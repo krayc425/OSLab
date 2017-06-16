@@ -26,6 +26,7 @@ _Only for reference._
     
 # Lab4
 __Ver1__ is written by myself, but has a little problem.
+
 __Ver2__ is modified based on other's code.
 
 * In `syscall.asm` and `proc.c` (Added __system calls__):
@@ -39,7 +40,6 @@ __Ver2__ is modified based on other's code.
     *  `void customer()`: Customer process.
     *  `void come(int customer)`: The No.`customer` customer is coming.
     *  `void haircut(int customer)`: Do hair cut for No.`customer` customer.
-    *  `void leave(int customer)`: No.`customer` customer finishes doing hair cut and leave.
     *  `void full(int customer)`: No.`customer` customer finds the shop is full and leave.
     *  `void TestB()` is a barber process.
     *  `void TestC(), void TestD(), void TestE()` are customer process.
